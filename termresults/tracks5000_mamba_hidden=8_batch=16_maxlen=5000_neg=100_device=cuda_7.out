@@ -1,0 +1,30 @@
+Arguments:
+backbone mamba
+batch_size 16
+dataset tracks5000
+device cuda:7
+dropout_rate 0.5
+eval_neg_sample 100
+hidden_units 8
+inference_only False
+l2_emb 0.0
+lr 0.0005
+maxlen 5000
+name mamba
+num_blocks 2
+num_epochs 501
+num_heads 1
+state_dict_path None
+train_dir tracks256_default/
+
+user_count: 25001
+item count: 12436473
+25001
+average sequence length: 3029.81
+parameters_count: 258312920
+loss in epoch 1 iteration 1561: 0.7787222266197205
+loss in epoch 2 iteration 1561: 0.7538558840751648
+loss in epoch 3 iteration 1561: 0.6713289022445679
+loss in epoch 4 iteration 1561: 0.7130625247955322
+loss in epoch 5 iteration 1561: 0.6636751890182495
+Evaluating
