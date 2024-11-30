@@ -215,3 +215,4 @@ loss in epoch 159 iteration 780: 0.1270565241575241
 loss in epoch 160 iteration 780: 0.12839122116565704
 Evaluatingepoch:160, time: 33181439.470291(s), valid (NDCG@5: 0.7378, HR@5: 0.8068, NDCG@10: 0.7484, HR@10: 0.8392, NDCG@20: 0.7542, HR@20: 0.8624), test (NDCG@5: 0.7269, HR@5: 0.7966, NDCG@10: 0.7376, HR@10: 0.8296, NDCG@20: 0.7447, HR@20: 0.8573)
 loss in epoch 161 iteration 780: 0.1273353546857834
+loss in epoch 162 iteration 780: 0.1272205412387848

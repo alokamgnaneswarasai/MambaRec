@@ -289,3 +289,4 @@ Evaluatingepoch:220, time: 39248442.183256(s), valid (NDCG@5: 0.6528, HR@5: 0.75
 loss in epoch 221 iteration 780: 0.23085351288318634
 loss in epoch 222 iteration 780: 0.23356714844703674
 loss in epoch 223 iteration 780: 0.2215123474597931
+loss in epoch 224 iteration 780: 0.22764603793621063

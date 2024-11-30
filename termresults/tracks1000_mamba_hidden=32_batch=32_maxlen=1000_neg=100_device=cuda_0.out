@@ -443,3 +443,4 @@ loss in epoch 349 iteration 780: 0.1518884003162384
 loss in epoch 350 iteration 780: 0.15029247105121613
 Evaluatingepoch:350, time: 56075033.445835(s), valid (NDCG@5: 0.7138, HR@5: 0.7869, NDCG@10: 0.7246, HR@10: 0.8201, NDCG@20: 0.7312, HR@20: 0.8461), test (NDCG@5: 0.7036, HR@5: 0.7754, NDCG@10: 0.7156, HR@10: 0.8119, NDCG@20: 0.7232, HR@20: 0.8420)
 loss in epoch 351 iteration 780: 0.15025536715984344
+loss in epoch 352 iteration 780: 0.1480879932641983
