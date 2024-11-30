@@ -386,3 +386,5 @@ loss in epoch 301 iteration 780: 0.1099933534860611
 loss in epoch 302 iteration 780: 0.11838306486606598
 loss in epoch 303 iteration 780: 0.11801755428314209
 loss in epoch 304 iteration 780: 0.11228133738040924
+loss in epoch 305 iteration 780: 0.11597651243209839
+Evaluatingepoch:305, time: 67295693.661690(s), valid (NDCG@5: 0.7474, HR@5: 0.8120, NDCG@10: 0.7574, HR@10: 0.8426, NDCG@20: 0.7628, HR@20: 0.8636), test (NDCG@5: 0.7356, HR@5: 0.8037, NDCG@10: 0.7460, HR@10: 0.8356, NDCG@20: 0.7517, HR@20: 0.8578)
