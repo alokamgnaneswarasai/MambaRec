@@ -41,3 +41,8 @@ loss in epoch 14 iteration 1561: 0.56251060962677
 loss in epoch 15 iteration 1561: 0.5845245122909546
 Evaluatingepoch:15, time: 8810444.480658(s), valid (NDCG@5: 0.6162, HR@5: 0.7497, NDCG@10: 0.6363, HR@10: 0.8113, NDCG@20: 0.6463, HR@20: 0.8505), test (NDCG@5: 0.6066, HR@5: 0.7412, NDCG@10: 0.6270, HR@10: 0.8037, NDCG@20: 0.6369, HR@20: 0.8426)
 loss in epoch 16 iteration 1561: 0.5407559871673584
+loss in epoch 17 iteration 1561: 0.5807191133499146
+loss in epoch 18 iteration 1561: 0.5779111385345459
+loss in epoch 19 iteration 1561: 0.5716705918312073
+loss in epoch 20 iteration 1561: 0.5363929867744446
+Evaluatingepoch:20, time: 12178961.303949(s), valid (NDCG@5: 0.6123, HR@5: 0.7496, NDCG@10: 0.6323, HR@10: 0.8106, NDCG@20: 0.6426, HR@20: 0.8509), test (NDCG@5: 0.6061, HR@5: 0.7439, NDCG@10: 0.6251, HR@10: 0.8019, NDCG@20: 0.6350, HR@20: 0.8408)
