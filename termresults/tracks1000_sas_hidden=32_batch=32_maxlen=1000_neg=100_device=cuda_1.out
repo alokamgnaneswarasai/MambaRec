@@ -581,3 +581,6 @@ loss in epoch 464 iteration 780: 0.19306589663028717
 loss in epoch 465 iteration 780: 0.19779685139656067
 Evaluatingepoch:465, time: 78406367.137432(s), valid (NDCG@5: 0.6690, HR@5: 0.7673, NDCG@10: 0.6842, HR@10: 0.8136, NDCG@20: 0.6925, HR@20: 0.8465), test (NDCG@5: 0.6616, HR@5: 0.7598, NDCG@10: 0.6767, HR@10: 0.8059, NDCG@20: 0.6856, HR@20: 0.8410)
 loss in epoch 466 iteration 780: 0.19567830860614777
+loss in epoch 467 iteration 780: 0.191152885556221
+loss in epoch 468 iteration 780: 0.19246113300323486
+loss in epoch 469 iteration 780: 0.1982923448085785

@@ -21,6 +21,189 @@ class PointWiseFeedForward(torch.nn.Module):
         return outputs
 
 
+class GatingSASmambaRec(torch.nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(GatingSASmambaRec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+
+        # Embedding layers
+        self.item_emb = torch.nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
+
+        # Mamba block
+        self.mamba1 = Mamba(
+            d_model=args.hidden_units,  # Embedding dimension
+            d_state=32,  # SSM state expansion factor
+            d_conv=4,    # Local convolution width
+            expand=2,    # Block expansion factor
+        ).to(self.dev)
+
+        # Self-Attention layer
+        self.attention_layer = torch.nn.MultiheadAttention(embed_dim=args.hidden_units, num_heads=args.num_heads, dropout=args.dropout_rate)
+        self.attention_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-6)
+        self.attention_dropout = torch.nn.Dropout(p=args.dropout_rate)
+
+        # Gating Network
+        self.gating_network = torch.nn.Sequential(
+            torch.nn.Linear(args.hidden_units, 2),
+            torch.nn.Softmax(dim=-1)  # Output probabilities for Mamba and Attention
+        )
+
+        # Feed-Forward Network (Optional for added flexibility)
+        self.feedforward_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-6)
+        self.feedforward_dropout = torch.nn.Dropout(p=args.dropout_rate)
+        self.feedforward = torch.nn.Sequential(
+            torch.nn.Linear(args.hidden_units, 4 * args.hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(4 * args.hidden_units, args.hidden_units)
+        )
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+
+        # Compute gating probabilities
+        gating_probs = self.gating_network(seqs.mean(dim=1))  # Mean pooling along sequence length
+        gate_decisions = torch.argmax(gating_probs, dim=-1)  # Discrete choice: 0 for Mamba, 1 for Attention
+
+        # Initialize output container
+        output = torch.zeros_like(seqs).to(self.dev)
+
+        # Process through the chosen block
+        for i, gate in enumerate(gate_decisions):
+            seq = seqs[i:i+1]  # Select individual sequence for processing
+
+            if gate == 0:  # Mamba block
+                output[i:i+1] = self.mamba1(seq)
+            else:  # Self-Attention block
+                seq = seq.transpose(0, 1)  # Convert to (seq_len, batch_size, hidden_units) for attention
+                attn_output, _ = self.attention_layer(seq, seq, seq)
+                attn_output = self.attention_dropout(attn_output) + seq  # Residual connection
+                attn_output = self.attention_layernorm(attn_output)  # Layer normalization
+                output[i:i+1] = attn_output.transpose(0, 1)  # Convert back to (batch_size, seq_len, hidden_units)
+
+        # Process through Feed-Forward Network (Optional)
+        feedforward_output = self.feedforward(output)
+        seqs = self.feedforward_dropout(feedforward_output) + output  # Residual connection
+        seqs = self.feedforward_layernorm(seqs)  # Layer normalization
+
+        return seqs
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs)
+
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+
+        return logits
+
+class SASmambaRec(torch.nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(SASmambaRec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+
+        # Embedding layers
+        self.item_emb = torch.nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
+
+        # Mamba block
+        self.mamba1 = Mamba(
+            d_model=args.hidden_units,  # Embedding dimension
+            d_state=32,  # SSM state expansion factor
+            d_conv=4,    # Local convolution width
+            expand=2,    # Block expansion factor
+        ).to(self.dev)
+
+        # Self-Attention layer
+        self.attention_layer = torch.nn.MultiheadAttention(embed_dim=args.hidden_units, num_heads=args.num_heads, dropout=args.dropout_rate)
+        self.attention_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-6)
+        self.attention_dropout = torch.nn.Dropout(p=args.dropout_rate)
+
+        # Learnable weights for Mixture of Experts
+        self.mamba_weight = torch.nn.Parameter(torch.tensor(0.5))
+        self.attention_weight = torch.nn.Parameter(torch.tensor(0.5))
+
+        # Feed-Forward Network (Optional for added flexibility)
+        self.feedforward_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-6)
+        self.feedforward_dropout = torch.nn.Dropout(p=args.dropout_rate)
+        self.feedforward = torch.nn.Sequential(
+            torch.nn.Linear(args.hidden_units, 4 * args.hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(4 * args.hidden_units, args.hidden_units)
+        )
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+
+        # Process through Mamba block
+        mamba_output = self.mamba1(seqs)
+
+        # Process through Self-Attention
+        seqs = seqs.transpose(0, 1)  # Convert to (seq_len, batch_size, hidden_units) for attention
+        attn_output, _ = self.attention_layer(seqs, seqs, seqs)
+        attn_output = self.attention_dropout(attn_output) + seqs  # Residual connection
+        attn_output = self.attention_layernorm(attn_output)  # Layer normalization
+        attn_output = attn_output.transpose(0, 1)  # Convert back to (batch_size, seq_len, hidden_units)
+
+        # Combine Mamba and Attention outputs using learnable weights
+        combined_output = self.mamba_weight * mamba_output + self.attention_weight * attn_output
+
+        # Process through Feed-Forward Network (Optional)
+        feedforward_output = self.feedforward(combined_output)
+        seqs = self.feedforward_dropout(feedforward_output) + combined_output  # Residual connection
+        seqs = self.feedforward_layernorm(seqs)  # Layer normalization
+
+        return seqs
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs)
+
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+
+        return logits
+
 class MambaRec(torch.nn.Module):
     def __init__(self, user_num, item_num, args):
         super(MambaRec, self).__init__()
