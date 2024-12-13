@@ -19,6 +19,12 @@ def random_neq(l, r, s):
 
 
 def sample_function(user_train, usernum, itemnum, batch_size, maxlen, result_queue, SEED):
+    
+    def random_item_from_training():
+        user = np.random.choice(list(user_train.keys()))
+        return np.random.choice(user_train[user])
+    
+    
     def sample():
 
         user = np.random.randint(1, usernum + 1)
@@ -40,6 +46,12 @@ def sample_function(user_train, usernum, itemnum, batch_size, maxlen, result_que
             idx -= 1
             if idx == -1: break
         
+        #Inject noise into 10% of the sequence tokens
+        # num_tokens_to_noise = int(0.1 * maxlen)
+        # token_indices = np.random.choice(maxlen, num_tokens_to_noise, replace=False)
+        # for idx in token_indices:
+        #     seq[idx] = random_item_from_training()
+            
         # print(f" seq shape: {seq.shape}, pos shape: {pos.shape}, neg shape: {neg.shape}")
         return (user, seq, pos, neg)
 
