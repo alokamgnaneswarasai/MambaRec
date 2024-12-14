@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from mamba_ssm import Mamba
-
+from jamba import Jamba
 
 class PointWiseFeedForward(torch.nn.Module):
     def __init__(self, hidden_units, dropout_rate):
@@ -19,6 +19,83 @@ class PointWiseFeedForward(torch.nn.Module):
         outputs = outputs.transpose(-1, -2) # as Conv1D requires (N, C, Length)
         outputs += inputs
         return outputs
+
+
+import torch
+import numpy as np
+from torch import nn
+
+class Jamba4Rec(torch.nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(Jamba4Rec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+
+        # Embedding layers
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+
+        # Jamba block
+        self.jamba = Jamba(
+            num_tokens=self.item_num + 1,  # Number of tokens
+            heads=args.num_heads,       # Number of attention heads
+            dim=args.hidden_units,  # Embedding dimension
+            depth=2,                   # Number of Jamba blocks
+            d_state=32,                # SSM state expansion factor
+            d_conv=4,                  # Local convolution width
+            expand=2,                  # Block expansion factor
+            pre_emb_norm=True          # Normalize embeddings before processing
+        ).to(self.dev)
+
+        # Feed-Forward Network (Optional)
+        self.feedforward_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-6)
+        self.feedforward_dropout = nn.Dropout(p=args.dropout_rate)
+        self.feedforward = nn.Sequential(
+            nn.Linear(args.hidden_units, 4 * args.hidden_units),
+            nn.ReLU(),
+            nn.Linear(4 * args.hidden_units, args.hidden_units)
+        )
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+
+        # Process sequences through the Jamba block
+        seqs = self.jamba(seqs)
+
+        # Process through Feed-Forward Network (Optional)
+        feedforward_output = self.feedforward(seqs)
+        seqs = self.feedforward_dropout(feedforward_output) + seqs  # Residual connection
+        seqs = self.feedforward_layernorm(seqs)  # Layer normalization
+
+        return seqs
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs)
+
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+
+        return logits
 
 
 class GatingSASmambaRec(torch.nn.Module):
