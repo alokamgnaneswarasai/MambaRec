@@ -222,7 +222,7 @@ class SASmambaRec(torch.nn.Module):
 
         # Learnable weights for Mixture of Experts
         self.mamba_weight = torch.nn.Parameter(torch.tensor(0.5))
-        self.attention_weight = torch.nn.Parameter(torch.tensor(0.5))
+        # self.attention_weight = torch.nn.Parameter(torch.tensor(0.5))
 
         # Feed-Forward Network (Optional for added flexibility)
         self.feedforward_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-6)
@@ -251,7 +251,7 @@ class SASmambaRec(torch.nn.Module):
         attn_output = attn_output.transpose(0, 1)  # Convert back to (batch_size, seq_len, hidden_units)
 
         # Combine Mamba and Attention outputs using learnable weights
-        combined_output = self.mamba_weight * mamba_output + self.attention_weight * attn_output
+        combined_output = self.mamba_weight * mamba_output + (1 - self.mamba_weight) * attn_output
 
         # Process through Feed-Forward Network (Optional)
         feedforward_output = self.feedforward(combined_output)

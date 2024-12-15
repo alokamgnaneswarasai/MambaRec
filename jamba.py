@@ -91,7 +91,7 @@ class TransformerBlock(nn.Module):
         self.heads = heads
 
         self.attn = MultiheadAttention(embed_dim=dim, num_heads=heads, batch_first=True)
-        self.ffn = FeedForward(dim, dim * 4, activation="relu")
+        self.ffn = FeedForward(dim, dim * 2, activation="relu")
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -149,7 +149,7 @@ class MambaMoELayer(nn.Module):
 
         # MoE
         self.moe = nn.ModuleList([
-            FeedForward(dim, dim * 4, activation="relu") for _ in range(num_experts)
+            FeedForward(dim, dim * 2, activation="relu") for _ in range(num_experts)
         ])
 
     def forward(self, x: Tensor):
@@ -209,12 +209,12 @@ class JambaBlock(nn.Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        x = self.mamba_layer(x)
+        # x = self.mamba_layer(x)
         x = self.mamba_moe_layer(x)
-        x = self.transformer(x)
-        x = self.mamba_moe_layer(x)
-        x = self.mamba_layer(x)
-        x = self.mamba_moe_layer(x)
+        # x = self.transformer(x)
+        # x = self.mamba_moe_layer(x)
+        # x = self.mamba_layer(x)
+        # x = self.mamba_moe_layer(x)
         return x
 
 
