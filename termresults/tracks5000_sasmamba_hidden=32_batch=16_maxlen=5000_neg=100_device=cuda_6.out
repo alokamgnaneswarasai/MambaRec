@@ -291,4 +291,4 @@ loss in epoch 222 iteration 1561: 0.12995560467243195
 loss in epoch 223 iteration 1561: 0.12874630093574524
 loss in epoch 224 iteration 1561: 0.1301976442337036
 loss in epoch 225 iteration 1561: 0.13354775309562683
-Evaluating
+Evaluatingepoch:225, time: 123634027.732611(s), valid (NDCG@5: 0.7632, HR@5: 0.8270, NDCG@10: 0.7723, HR@10: 0.8549, NDCG@20: 0.7775, HR@20: 0.8756), test (NDCG@5: 0.7471, HR@5: 0.8150, NDCG@10: 0.7569, HR@10: 0.8452, NDCG@20: 0.7628, HR@20: 0.8685)
