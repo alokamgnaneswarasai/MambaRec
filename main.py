@@ -193,10 +193,7 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), os.path.join(folder, fname))
             
     print("Training time :", T)
-    # wandb.log({
-    #     "Training_time":T,"Inference_time":inference_time,"count_parameters":count_parameters(model)
-    # })
     f.close()
     sampler.close()
     print("Done")
-    # wandb.finish()
+    

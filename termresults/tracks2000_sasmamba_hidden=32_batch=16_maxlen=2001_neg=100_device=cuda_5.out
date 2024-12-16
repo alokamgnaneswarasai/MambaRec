@@ -505,3 +505,4 @@ Evaluatingepoch:400, time: 134012960.698128(s), valid (NDCG@5: 0.7317, HR@5: 0.8
 loss in epoch 401 iteration 1561: 0.14280487596988678
 loss in epoch 402 iteration 1561: 0.13942964375019073
 loss in epoch 403 iteration 1561: 0.1457374393939972
+loss in epoch 404 iteration 1561: 0.14489856362342834

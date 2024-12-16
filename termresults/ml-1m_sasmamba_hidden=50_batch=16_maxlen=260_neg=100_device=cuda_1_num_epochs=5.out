@@ -27,4 +27,6 @@ loss in epoch 2 iteration 376: 0.8803838491439819
 loss in epoch 3 iteration 376: 0.7718309164047241
 loss in epoch 4 iteration 376: 0.7111097574234009
 loss in epoch 5 iteration 376: 0.6888135075569153
-Evaluating
+Evaluatingepoch:5, time: 17449.634314(s), valid (NDCG@5: 0.3784, HR@5: 0.5346, NDCG@10: 0.4309, HR@10: 0.6972, NDCG@20: 0.4659, HR@20: 0.8344), test (NDCG@5: 0.3648, HR@5: 0.5167, NDCG@10: 0.4162, HR@10: 0.6745, NDCG@20: 0.4518, HR@20: 0.8154)
+Training time : 17449.634313583374
+Done

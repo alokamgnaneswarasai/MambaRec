@@ -437,3 +437,4 @@ loss in epoch 344 iteration 1561: 0.17610803246498108
 loss in epoch 345 iteration 1561: 0.1912432610988617
 Evaluatingepoch:345, time: 123239514.217854(s), valid (NDCG@5: 0.6665, HR@5: 0.7706, NDCG@10: 0.6806, HR@10: 0.8137, NDCG@20: 0.6887, HR@20: 0.8453), test (NDCG@5: 0.6556, HR@5: 0.7601, NDCG@10: 0.6704, HR@10: 0.8054, NDCG@20: 0.6792, HR@20: 0.8398)
 loss in epoch 346 iteration 1561: 0.18768931925296783
+loss in epoch 347 iteration 1561: 0.19744554162025452
