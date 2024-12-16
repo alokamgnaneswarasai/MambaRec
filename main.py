@@ -136,7 +136,7 @@ if __name__ == '__main__':
             T += (t1 - t0) * 1000
             pos_labels, neg_labels = torch.ones(pos_logits.shape, device=args.device), torch.zeros(neg_logits.shape,
                                                                                                    device=args.device)
-            # print("\neye ball check raw_logits:"); print(pos_logits); print(neg_logits) # check pos_logits > 0, neg_logits < 0
+           
             adam_optimizer.zero_grad()
             indices = np.where(pos != 0)
             loss = bce_criterion(pos_logits[indices], pos_labels[indices])
@@ -145,13 +145,18 @@ if __name__ == '__main__':
             t0 = time.time()
             loss.backward()
             
-            # print("loss in epoch {} iteration {}: {}".format(epoch, step,loss.item()))
+            
             t1 = time.time()
             T += (t1 - t0) * 1000
             adam_optimizer.step()
         print("loss in epoch {} iteration {}: {}".format(epoch, step,
                                                          loss.item()))  # expected 0.4~0.6 after init few epochs
-
+        
+        
+    
+        if not os.path.exists(f'saved_models/{args.dataset}/{args.backbone}/'):
+            os.makedirs(f'saved_models/{args.dataset}/{args.backbone}')
+            
         if epoch % 5 == 0:
             model.eval()
             print('Evaluating', end='')
@@ -164,18 +169,16 @@ if __name__ == '__main__':
                     epoch, T, t_valid[0], t_valid[1], t_valid[2], t_valid[3], t_valid[4], t_valid[5],
                     t_test[0], t_test[1], t_test[2], t_test[3], t_test[4], t_test[5]))
 
-            # wandb.log(
-            #    {"HR@5": t_test[1], "HR@10": t_test[3], "HR@20": t_test[5], "NDCG@5": t_test[0], "NDCG@10": t_test[2],
-            #     "NDCG@20": t_test[4], "loss": loss})
-
             if t_valid[3] > best_HR_10_val:
                 best_HR_10_val = t_valid[3]
                 best_epoch = epoch
-
-                folder = args.dataset + '_' + args.train_dir
-                fname = 'SASRec.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.eval_neg_sample={}.pth'
-                fname = fname.format(args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units,
-                                     args.maxlen, args.eval_neg_sample)
+                 
+                folder = f'saved_models/{args.dataset}/{args.backbone}'
+                # fname = 'SASRec.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.eval_neg_sample={}.pth'
+                fname='{}.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.eval_neg_sample={}.pth'
+                # fname = fname.format(args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units,
+                #                      args.maxlen, args.eval_neg_sample)
+                fname=fname.format(args.dataset,args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units, args.maxlen, args.eval_neg_sample)
                 torch.save(model.state_dict(), os.path.join(folder, fname))
 
             f.write(str(t_valid) + ' ' + str(t_test) + '\n')
@@ -183,10 +186,10 @@ if __name__ == '__main__':
             model.train()
 
         if epoch == args.num_epochs:
-            folder = args.dataset + '_' + args.train_dir
-            fname = 'SASRec.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.pth'
-            fname = fname.format(args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units,
-                                 args.maxlen)
+            folder = f'saved_models/{args.dataset}/{args.backbone}'
+            fname = '{}.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.eval_neg_sample={}_final.pth'
+            fname = fname.format(args.dataset, args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units,
+                                 args.maxlen, args.eval_neg_sample)
             torch.save(model.state_dict(), os.path.join(folder, fname))
             
     print("Training time :", T)

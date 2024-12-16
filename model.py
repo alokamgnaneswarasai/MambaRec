@@ -232,6 +232,28 @@ class SASmambaRec(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(4 * args.hidden_units, args.hidden_units)
         )
+        
+        # 2nd try
+        # self.attention_layernorms = torch.nn.ModuleList() # to be Q for self-attention
+        # self.attention_layers = torch.nn.ModuleList()
+        # self.forward_layernorms = torch.nn.ModuleList()
+        # self.forward_layers = torch.nn.ModuleList()
+        # self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
+        
+        # for _ in range(args.num_blocks):
+        #     new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
+        #     self.attention_layernorms.append(new_attn_layernorm)
+
+        #     new_attn_layer =  torch.nn.MultiheadAttention(args.hidden_units,
+        #                                                     args.num_heads,
+        #                                                     args.dropout_rate)
+        #     self.attention_layers.append(new_attn_layer)
+
+        #     new_fwd_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
+        #     self.forward_layernorms.append(new_fwd_layernorm)
+
+        #     new_fwd_layer = PointWiseFeedForward(args.hidden_units, args.dropout_rate)
+        #     self.forward_layers.append(new_fwd_layer)
 
     def log2feats(self, log_seqs):
         seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
@@ -257,6 +279,32 @@ class SASmambaRec(torch.nn.Module):
         feedforward_output = self.feedforward(combined_output)
         seqs = self.feedforward_dropout(feedforward_output) + combined_output  # Residual connection
         seqs = self.feedforward_layernorm(seqs)  # Layer normalization
+        
+        # # 2nd try
+        # seqs = self.mamba1(seqs)
+        # timeline_mask = torch.BoolTensor(log_seqs == 0).to(self.dev)
+        # seqs *= ~timeline_mask.unsqueeze(-1) # broadcast in last dim
+
+        # tl = seqs.shape[1] # time dim len for enforce causality
+        # attention_mask = ~torch.tril(torch.ones((tl, tl), dtype=torch.bool, device=self.dev))
+
+        # for i in range(len(self.attention_layers)):
+        #     seqs = torch.transpose(seqs, 0, 1)
+        #     Q = self.attention_layernorms[i](seqs)
+        #     mha_outputs, _ = self.attention_layers[i](Q, seqs, seqs, 
+        #                                     attn_mask=attention_mask)
+        #                                     # key_padding_mask=timeline_mask
+        #                                     # need_weights=False) this arg do not work?
+        #     seqs = Q + mha_outputs
+        #     seqs = torch.transpose(seqs, 0, 1)
+
+        #     seqs = self.forward_layernorms[i](seqs)
+        #     seqs = self.forward_layers[i](seqs)
+        #     seqs *=  ~timeline_mask.unsqueeze(-1)
+
+        # log_feats = self.last_layernorm(seqs) # (U, T, C) -> (U, -1, C)
+
+        # return log_feats
 
         return seqs
 
@@ -504,11 +552,6 @@ class MultiHeadedLinrec(torch.nn.Module):
             mask = mask.unsqueeze(0)
         # print('multmaskshape===', mask.shape) #multmaskshape=== torch.Size([1, 8, 4, 4])
         batch_size = query.size(0)
-        # view中的四个参数的意义
-        # batch_size: 批次的样本数量
-        # -1这个位置应该是： 每个句子的长度
-        # self.head*self.d_k应该是embedding的维度， 这里把词嵌入的维度分到了每个头中， 即每个头中分到了词的部分维度的特征
-        # query, key, value形状torch.Size([2, 8, 4, 64])
         query, key, value = [model(x).view(batch_size, -1,  self.head, self.d_k).transpose(1, 2) for model, x in zip(self.linears, (query, key, value))]
         # query, key, value = [model(x) for model, x in zip(self.linears, (query, key, value))]
         # print('-=-=', query.shape)
@@ -521,8 +564,7 @@ class MultiHeadedLinrec(torch.nn.Module):
         '''
         # 所以mask的形状 torch.Size([1, 8, 4, 4])  这里的所有参数都是4维度的   进过dropout的也是4维度的
         x = linrec(query, key, value, mask=mask, dropout=self.dropout)
-        # contiguous解释:https://zhuanlan.zhihu.com/p/64551412
-        # 这里相当于图中concat过程
+       
         x = x.transpose(1, 2).contiguous().view(batch_size, -1, self.head*self.d_k)
 
         return self.linears[-1](x)

@@ -11,6 +11,7 @@ while [[ "$#" -gt 0 ]]; do
         --hidden_units=*) hidden_units="${1#*=}";;
         --eval_neg_sample=*) eval_neg_sample="${1#*=}";;
         --device=*) device="${1#*=}";;
+        --num_epochs=*) num_epochs="${1#*=}";;
         *) echo "Unknown parameter: $1"; exit 1;;
     esac
     shift
@@ -28,7 +29,7 @@ device="${device:-cuda:0}"
 
 # Construct the output filename dynamically
 output_dir="./termresults"
-output_file="${output_dir}/${dataset}_${backbone}_hidden=${hidden_units}_batch=${batch_size}_maxlen=${maxlen}_neg=${eval_neg_sample}_device=$(echo $device | tr ':' '_').out"
+output_file="${output_dir}/${dataset}_${backbone}_hidden=${hidden_units}_batch=${batch_size}_maxlen=${maxlen}_neg=${eval_neg_sample}_device=$(echo $device | tr ':' '_')_num_epochs=${num_epochs}.out"
 
 # Create the output directory if it doesn't exist
 mkdir -p "$output_dir"
@@ -42,6 +43,7 @@ python3 -u main.py \
   --backbone="$backbone" \
   --hidden_units="$hidden_units" \
   --eval_neg_sample="$eval_neg_sample" \
+  --num_epochs="$num_epochs" \
   --device="$device" > "$output_file"
 
 # Notify the user
