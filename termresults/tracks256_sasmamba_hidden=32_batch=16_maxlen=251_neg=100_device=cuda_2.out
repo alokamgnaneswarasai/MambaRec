@@ -492,3 +492,4 @@ loss in epoch 390 iteration 1561: 0.3758736550807953
 Evaluatingepoch:390, time: 143575248.079538(s), valid (NDCG@5: 0.6003, HR@5: 0.7183, NDCG@10: 0.6129, HR@10: 0.7566, NDCG@20: 0.6202, HR@20: 0.7857), test (NDCG@5: 0.5912, HR@5: 0.7070, NDCG@10: 0.6048, HR@10: 0.7482, NDCG@20: 0.6121, HR@20: 0.7774)
 loss in epoch 391 iteration 1561: 0.3486558496952057
 loss in epoch 392 iteration 1561: 0.36063215136528015
+loss in epoch 393 iteration 1561: 0.3459113836288452

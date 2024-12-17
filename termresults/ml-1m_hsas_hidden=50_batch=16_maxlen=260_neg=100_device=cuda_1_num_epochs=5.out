@@ -23,3 +23,8 @@ item count: 3416
 average sequence length: 163.50
 parameters_count: 248468
 loss in epoch 1 iteration 376: 1.0657150745391846
+loss in epoch 2 iteration 376: 1.0119240283966064
+loss in epoch 3 iteration 376: 0.9735918641090393
+loss in epoch 4 iteration 376: 0.9385208487510681
+loss in epoch 5 iteration 376: 1.0271902084350586
+Evaluating
