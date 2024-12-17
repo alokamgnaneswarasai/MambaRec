@@ -4,7 +4,7 @@ import torch
 import argparse
 import wandb
 import warnings
-from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec
+from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalTransformer
 from utils import *
 from tqdm import tqdm
 
@@ -101,12 +101,16 @@ if __name__ == '__main__':
         
     elif args.backbone == 'jamba':
         model = Jamba4Rec(usernum, itemnum, args).to(args.device)
+        
+    elif args.backbone == 'hsas':
+        model = HierarchicalTransformer(usernum, itemnum, args).to(args.device)
     for name, param in model.named_parameters():
         try:
             torch.nn.init.xavier_normal_(param.data)
         except:
             pass  # just ignore those failed init layers
-
+    
+    
     # this fails embedding init 'Embedding' object has no attribute 'dim'
     # model.apply(torch.nn.init.xavier_uniform_)
     print('parameters_count:', count_parameters(model))
