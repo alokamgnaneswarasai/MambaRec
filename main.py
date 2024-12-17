@@ -4,7 +4,7 @@ import torch
 import argparse
 import wandb
 import warnings
-from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalTransformer
+from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec
 from utils import *
 from tqdm import tqdm
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         model = Jamba4Rec(usernum, itemnum, args).to(args.device)
         
     elif args.backbone == 'hsas':
-        model = HierarchicalTransformer(usernum, itemnum, args).to(args.device)
+        model = HierarchicalSASRec(usernum, itemnum, args).to(args.device)
     for name, param in model.named_parameters():
         try:
             torch.nn.init.xavier_normal_(param.data)

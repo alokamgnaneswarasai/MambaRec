@@ -407,3 +407,44 @@ loss in epoch 319 iteration 1561: 0.12045957148075104
 loss in epoch 320 iteration 1561: 0.12475361675024033
 Evaluatingepoch:320, time: 163847278.374672(s), valid (NDCG@5: 0.7679, HR@5: 0.8311, NDCG@10: 0.7765, HR@10: 0.8575, NDCG@20: 0.7812, HR@20: 0.8760), test (NDCG@5: 0.7541, HR@5: 0.8187, NDCG@10: 0.7633, HR@10: 0.8469, NDCG@20: 0.7688, HR@20: 0.8685)
 loss in epoch 321 iteration 1561: 0.12042196840047836
+loss in epoch 322 iteration 1561: 0.1200966015458107
+loss in epoch 323 iteration 1561: 0.11489514261484146
+loss in epoch 324 iteration 1561: 0.1281208097934723
+loss in epoch 325 iteration 1561: 0.11466778814792633
+Evaluatingepoch:325, time: 165956422.801733(s), valid (NDCG@5: 0.7672, HR@5: 0.8304, NDCG@10: 0.7757, HR@10: 0.8565, NDCG@20: 0.7807, HR@20: 0.8761), test (NDCG@5: 0.7531, HR@5: 0.8184, NDCG@10: 0.7628, HR@10: 0.8482, NDCG@20: 0.7681, HR@20: 0.8691)
+loss in epoch 326 iteration 1561: 0.12780514359474182
+loss in epoch 327 iteration 1561: 0.11839058250188828
+loss in epoch 328 iteration 1561: 0.11934637278318405
+loss in epoch 329 iteration 1561: 0.12002088129520416
+loss in epoch 330 iteration 1561: 0.11475780606269836
+Evaluatingepoch:330, time: 168065269.008398(s), valid (NDCG@5: 0.7676, HR@5: 0.8295, NDCG@10: 0.7764, HR@10: 0.8563, NDCG@20: 0.7813, HR@20: 0.8757), test (NDCG@5: 0.7535, HR@5: 0.8180, NDCG@10: 0.7631, HR@10: 0.8475, NDCG@20: 0.7687, HR@20: 0.8693)
+loss in epoch 331 iteration 1561: 0.11745674908161163
+loss in epoch 332 iteration 1561: 0.11672309786081314
+loss in epoch 333 iteration 1561: 0.1267956793308258
+loss in epoch 334 iteration 1561: 0.12181032449007034
+loss in epoch 335 iteration 1561: 0.12049166113138199
+Evaluatingepoch:335, time: 170174941.698551(s), valid (NDCG@5: 0.7674, HR@5: 0.8316, NDCG@10: 0.7758, HR@10: 0.8572, NDCG@20: 0.7806, HR@20: 0.8763), test (NDCG@5: 0.7535, HR@5: 0.8188, NDCG@10: 0.7629, HR@10: 0.8476, NDCG@20: 0.7684, HR@20: 0.8694)
+loss in epoch 336 iteration 1561: 0.12379481643438339
+loss in epoch 337 iteration 1561: 0.12460295110940933
+loss in epoch 338 iteration 1561: 0.12645021080970764
+loss in epoch 339 iteration 1561: 0.11985468119382858
+loss in epoch 340 iteration 1561: 0.12215077877044678
+Evaluatingepoch:340, time: 172284135.097980(s), valid (NDCG@5: 0.7665, HR@5: 0.8302, NDCG@10: 0.7751, HR@10: 0.8563, NDCG@20: 0.7802, HR@20: 0.8762), test (NDCG@5: 0.7553, HR@5: 0.8181, NDCG@10: 0.7651, HR@10: 0.8482, NDCG@20: 0.7705, HR@20: 0.8694)
+loss in epoch 341 iteration 1561: 0.1189698874950409
+loss in epoch 342 iteration 1561: 0.11861448734998703
+loss in epoch 343 iteration 1561: 0.1101045235991478
+loss in epoch 344 iteration 1561: 0.1132354587316513
+loss in epoch 345 iteration 1561: 0.12499338388442993
+Evaluatingepoch:345, time: 174394767.816067(s), valid (NDCG@5: 0.7691, HR@5: 0.8300, NDCG@10: 0.7778, HR@10: 0.8566, NDCG@20: 0.7830, HR@20: 0.8771), test (NDCG@5: 0.7561, HR@5: 0.8198, NDCG@10: 0.7650, HR@10: 0.8472, NDCG@20: 0.7707, HR@20: 0.8696)
+loss in epoch 346 iteration 1561: 0.12162905186414719
+loss in epoch 347 iteration 1561: 0.12370540201663971
+loss in epoch 348 iteration 1561: 0.1285480111837387
+loss in epoch 349 iteration 1561: 0.12648287415504456
+loss in epoch 350 iteration 1561: 0.1158498153090477
+Evaluatingepoch:350, time: 176505823.006630(s), valid (NDCG@5: 0.7677, HR@5: 0.8301, NDCG@10: 0.7765, HR@10: 0.8572, NDCG@20: 0.7814, HR@20: 0.8764), test (NDCG@5: 0.7551, HR@5: 0.8198, NDCG@10: 0.7640, HR@10: 0.8474, NDCG@20: 0.7696, HR@20: 0.8695)
+loss in epoch 351 iteration 1561: 0.11276761442422867
+loss in epoch 352 iteration 1561: 0.11621151864528656
+loss in epoch 353 iteration 1561: 0.11882652342319489
+loss in epoch 354 iteration 1561: 0.12173669040203094
+loss in epoch 355 iteration 1561: 0.1243571937084198
+Evaluating

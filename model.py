@@ -666,3 +666,133 @@ class LinRec(torch.nn.Module):
 
 
 
+class HierarchicalSASRec(nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(HierarchicalSASRec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.hidden_units = args.hidden_units
+        self.maxlen = args.maxlen
+        self.segment_len = 10  # Length of each segment
+        self.downscale_factor = 32  # Downsampling factor
+        
+        # Embedding layers
+        self.item_emb = nn.Embedding(self.item_num + 1, self.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(self.maxlen, self.hidden_units)  
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+
+        # Downsampling transformer
+        self.downsampling_transformer = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=self.hidden_units,
+                nhead=args.num_heads,
+                dim_feedforward=3,
+                dropout=args.dropout_rate,
+            ),
+            num_layers=args.num_blocks,
+        )
+        
+        # Hierarchical transformer
+        self.hierarchical_transformer = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=self.hidden_units,
+                nhead=args.num_heads,
+                dim_feedforward=3,
+                dropout=args.dropout_rate,
+            ),
+            num_layers=args.num_blocks,
+        )
+
+        # Upsampling transformer
+        self.upsampling_transformer = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=self.hidden_units,
+                nhead=args.num_heads,
+                dim_feedforward=3,
+                dropout=args.dropout_rate,
+            ),
+            num_layers=args.num_blocks,
+        )
+        
+        self.last_layernorm = nn.LayerNorm(self.hidden_units, eps=1e-8)
+
+    def downsample(self, seqs):
+        """
+        Downsample the sequence by reducing the sequence length using fixed stride.
+        """
+        B, L, D = seqs.size()
+        stride = self.downscale_factor
+        downsampled_len = (L + stride - 1) // stride  # Calculate the reduced length
+        downsampled_seqs = seqs[:, ::stride, :]  # Downsample with fixed stride
+        return downsampled_seqs
+
+    def upsample(self, downsampled_seqs, target_len):
+        """
+        Upsample the sequence back to the original length using interpolation.
+        """
+        B, downsampled_len, D = downsampled_seqs.size()
+        interpolated = torch.nn.functional.interpolate(
+            downsampled_seqs.permute(0, 2, 1),  # (B, D, downsampled_len)
+            size=target_len,  # Upsample to target sequence length
+            mode="linear",
+            align_corners=True,
+        )
+        return interpolated.permute(0, 2, 1)  # Back to (B, target_len, D)
+
+    def log2feats(self, log_seqs):
+        """
+        Process the input sequences hierarchically and return final representations.
+        """
+        # Embedding
+        log_seqs= torch.LongTensor(log_seqs).to(self.dev)
+        seqs = self.item_emb(log_seqs.to(self.dev)) * (self.hidden_units ** 0.5)
+        positions = np.tile(np.arange(log_seqs.shape[1]), (log_seqs.shape[0], 1))
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+
+        # Mask padding tokens
+        padding_mask = log_seqs == 0
+        seqs = seqs * ~padding_mask.unsqueeze(-1)
+
+        # Downsample
+        downsampled_seqs = self.downsample(seqs)
+
+        # Process with downsampling transformer
+        downsampled_outputs = self.downsampling_transformer(downsampled_seqs.permute(1, 0, 2))
+        downsampled_outputs = downsampled_outputs.permute(1, 0, 2)  # (B, reduced_len, D)
+
+        # Hierarchical processing
+        hierarchical_outputs = self.hierarchical_transformer(downsampled_outputs.permute(1, 0, 2))
+        hierarchical_outputs = hierarchical_outputs.permute(1, 0, 2)
+
+        # Upsample
+        upsampled_seqs = self.upsample(hierarchical_outputs, target_len=seqs.size(1))
+
+        # Process with upsampling transformer
+        upsampled_outputs = self.upsampling_transformer(upsampled_seqs.permute(1, 0, 2))
+        upsampled_outputs = upsampled_outputs.permute(1, 0, 2)  # (B, original_len, D)
+
+        # Apply final layer normalization
+        return self.last_layernorm(upsampled_outputs)
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+        
+       
+        
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs)
+        final_feat = log_feats[:, -1, :]  # Last timestep for prediction
+        item_embs = self.item_emb(item_indices.to(self.dev))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits
