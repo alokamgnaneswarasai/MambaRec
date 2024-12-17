@@ -762,6 +762,7 @@ class HierarchicalSASRec(nn.Module):
         # Process with downsampling transformer
         downsampled_outputs = self.downsampling_transformer(downsampled_seqs.permute(1, 0, 2))
         downsampled_outputs = downsampled_outputs.permute(1, 0, 2)  # (B, reduced_len, D)
+        
 
         # Hierarchical processing
         hierarchical_outputs = self.hierarchical_transformer(downsampled_outputs.permute(1, 0, 2))
@@ -793,6 +794,6 @@ class HierarchicalSASRec(nn.Module):
     def predict(self, user_ids, log_seqs, item_indices):
         log_feats = self.log2feats(log_seqs)
         final_feat = log_feats[:, -1, :]  # Last timestep for prediction
-        item_embs = self.item_emb(item_indices.to(self.dev))
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
         return logits
