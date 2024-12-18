@@ -797,3 +797,95 @@ class HierarchicalSASRec(nn.Module):
         item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
         return logits
+
+
+class MoEMambaRec(nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(MoEMambaRec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+
+        self.mamba_layers =Mamba(
+                d_model=args.hidden_units,  # Embedding dimension
+                d_state=32,                # SSM state expansion factor
+                d_conv=4,                  # Local convolution width
+                expand=2                   # Block expansion factor
+            ).to(self.dev)
+            
+
+        self.moe_layers = MoE(
+                d_model=args.hidden_units,
+                num_experts=4,
+                top_k=2
+            ).to(self.dev)
+            
+        
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+
+        seqs = self.mamba_layers(seqs)
+        
+        seqs = self.moe_layers(seqs)
+        return seqs
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs)
+
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+
+        return logits
+
+
+class MoE(nn.Module):
+    def __init__(self, d_model, num_experts, top_k):
+        super(MoE, self).__init__()
+        self.num_experts = num_experts
+        self.top_k = top_k
+
+        self.experts = nn.ModuleList([
+            nn.Linear(d_model, d_model) for _ in range(num_experts)
+        ])
+        self.gate = nn.Linear(d_model, num_experts)
+
+    def forward(self, x):
+       
+        gate_scores = torch.softmax(self.gate(x), dim=-1)  # Gate to distribute input
+        top_k_values, top_k_indices = torch.topk(gate_scores, self.top_k, dim=-1)
+
+        # Combine outputs from top-k experts
+        expert_outputs = torch.stack([self.experts[i](x) for i in range(self.num_experts)], dim=-1)
+        
+        
+        top_k_indices = top_k_indices.unsqueeze(-2).expand(-1, -1, expert_outputs.size(-2), -1)  # [batch_size, seq_len, d_model, top_k]
+        
+        top_k_outputs = torch.gather(expert_outputs, dim=-1, index=top_k_indices)  # [batch_size, seq_len, d_model, top_k]
+        
+        
+        # Weighted sum of top-k expert outputs
+        weighted_outputs = (top_k_outputs * top_k_values.unsqueeze(-2)).sum(dim=-1)
+       
+        return weighted_outputs
