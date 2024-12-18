@@ -1,0 +1,68 @@
+Arguments:
+backbone mamba
+batch_size 16
+dataset KuaiRand5000
+device cuda:2
+dropout_rate 0.5
+eval_neg_sample 100
+hidden_units 32
+inference_only False
+l2_emb 0.0
+lr 0.0005
+maxlen 5000
+name mamba
+num_blocks 2
+num_epochs 500
+num_heads 1
+state_dict_path None
+train_dir tracks256_default/
+
+user_count: 26858
+item count: 8825518
+26858
+average sequence length: 2159.58
+parameters_count: 1025412192
+loss in epoch 1 iteration 1677: 0.770682692527771
+loss in epoch 2 iteration 1677: 0.7344989776611328
+loss in epoch 3 iteration 1677: 0.6883447766304016
+loss in epoch 4 iteration 1677: 0.5891372561454773
+loss in epoch 5 iteration 1677: 0.5596722960472107
+Evaluatingepoch:5, time: 1790544.980764(s), valid (NDCG@5: 0.6265, HR@5: 0.7688, NDCG@10: 0.6486, HR@10: 0.8365, NDCG@20: 0.6590, HR@20: 0.8776), test (NDCG@5: 0.6298, HR@5: 0.7740, NDCG@10: 0.6512, HR@10: 0.8396, NDCG@20: 0.6620, HR@20: 0.8821)
+loss in epoch 6 iteration 1677: 0.4994078576564789
+loss in epoch 7 iteration 1677: 0.47820180654525757
+loss in epoch 8 iteration 1677: 0.4359980523586273
+loss in epoch 9 iteration 1677: 0.42456817626953125
+loss in epoch 10 iteration 1677: 0.41009509563446045
+Evaluatingepoch:10, time: 3577937.374353(s), valid (NDCG@5: 0.6620, HR@5: 0.7907, NDCG@10: 0.6807, HR@10: 0.8479, NDCG@20: 0.6897, HR@20: 0.8835), test (NDCG@5: 0.6617, HR@5: 0.7925, NDCG@10: 0.6805, HR@10: 0.8500, NDCG@20: 0.6901, HR@20: 0.8877)
+loss in epoch 11 iteration 1677: 0.42247748374938965
+loss in epoch 12 iteration 1677: 0.3529726266860962
+loss in epoch 13 iteration 1677: 0.3562139570713043
+loss in epoch 14 iteration 1677: 0.3304259181022644
+loss in epoch 15 iteration 1677: 0.3403347134590149
+Evaluatingepoch:15, time: 5364934.305668(s), valid (NDCG@5: 0.6765, HR@5: 0.7956, NDCG@10: 0.6932, HR@10: 0.8467, NDCG@20: 0.7022, HR@20: 0.8819), test (NDCG@5: 0.6744, HR@5: 0.7985, NDCG@10: 0.6921, HR@10: 0.8524, NDCG@20: 0.7013, HR@20: 0.8887)
+loss in epoch 16 iteration 1677: 0.31284099817276
+loss in epoch 17 iteration 1677: 0.29369932413101196
+loss in epoch 18 iteration 1677: 0.3178073465824127
+loss in epoch 19 iteration 1677: 0.260410875082016
+loss in epoch 20 iteration 1677: 0.2593196630477905
+Evaluatingepoch:20, time: 7147811.788082(s), valid (NDCG@5: 0.6969, HR@5: 0.8059, NDCG@10: 0.7118, HR@10: 0.8512, NDCG@20: 0.7202, HR@20: 0.8844), test (NDCG@5: 0.6945, HR@5: 0.8077, NDCG@10: 0.7109, HR@10: 0.8579, NDCG@20: 0.7193, HR@20: 0.8908)
+loss in epoch 21 iteration 1677: 0.25950127840042114
+loss in epoch 22 iteration 1677: 0.25515806674957275
+loss in epoch 23 iteration 1677: 0.24805057048797607
+loss in epoch 24 iteration 1677: 0.24093732237815857
+loss in epoch 25 iteration 1677: 0.24596747756004333
+Evaluatingepoch:25, time: 8929545.230865(s), valid (NDCG@5: 0.7032, HR@5: 0.8110, NDCG@10: 0.7180, HR@10: 0.8563, NDCG@20: 0.7258, HR@20: 0.8872), test (NDCG@5: 0.7045, HR@5: 0.8150, NDCG@10: 0.7189, HR@10: 0.8591, NDCG@20: 0.7273, HR@20: 0.8920)
+loss in epoch 26 iteration 1677: 0.2246471643447876
+loss in epoch 27 iteration 1677: 0.21817724406719208
+loss in epoch 28 iteration 1677: 0.2234976887702942
+loss in epoch 29 iteration 1677: 0.2341877818107605
+loss in epoch 30 iteration 1677: 0.2071879655122757
+Evaluatingepoch:30, time: 10712328.380823(s), valid (NDCG@5: 0.7135, HR@5: 0.8165, NDCG@10: 0.7275, HR@10: 0.8593, NDCG@20: 0.7352, HR@20: 0.8898), test (NDCG@5: 0.7139, HR@5: 0.8216, NDCG@10: 0.7277, HR@10: 0.8638, NDCG@20: 0.7354, HR@20: 0.8942)
+loss in epoch 31 iteration 1677: 0.22862067818641663
+loss in epoch 32 iteration 1677: 0.22175303101539612
+loss in epoch 33 iteration 1677: 0.2137104719877243
+loss in epoch 34 iteration 1677: 0.2214750051498413
+loss in epoch 35 iteration 1677: 0.2059747278690338
+Evaluatingepoch:35, time: 12484893.606424(s), valid (NDCG@5: 0.7168, HR@5: 0.8201, NDCG@10: 0.7302, HR@10: 0.8611, NDCG@20: 0.7377, HR@20: 0.8910), test (NDCG@5: 0.7173, HR@5: 0.8246, NDCG@10: 0.7308, HR@10: 0.8660, NDCG@20: 0.7384, HR@20: 0.8959)
+loss in epoch 36 iteration 1677: 0.21844357252120972
+loss in epoch 37 iteration 1677: 0.2111354023218155
