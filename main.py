@@ -182,7 +182,7 @@ if __name__ == '__main__':
                 fname='{}.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.eval_neg_sample={}.pth'
                 # fname = fname.format(args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units,
                 #                      args.maxlen, args.eval_neg_sample)
-                fname=fname.format(args.dataset,args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units, args.maxlen, args.eval_neg_sample)
+                fname=fname.format(args.dataset,epoch, args.lr, args.num_blocks, args.num_heads, args.hidden_units, args.maxlen, args.eval_neg_sample)
                 torch.save(model.state_dict(), os.path.join(folder, fname))
 
             f.write(str(t_valid) + ' ' + str(t_test) + '\n')

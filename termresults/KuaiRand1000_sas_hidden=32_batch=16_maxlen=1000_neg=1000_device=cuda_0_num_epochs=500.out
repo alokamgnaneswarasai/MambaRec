@@ -2,9 +2,9 @@ Arguments:
 backbone sas
 batch_size 16
 dataset KuaiRand1000
-device cuda:5
+device cuda:0
 dropout_rate 0.5
-eval_neg_sample 100
+eval_neg_sample 1000
 hidden_units 32
 inference_only False
 l2_emb 0.0
@@ -22,9 +22,7 @@ item count: 4524611
 26858
 average sequence length: 853.65
 parameters_count: 1025284192
-loss in epoch 1 iteration 1677: 0.8820556402206421
-loss in epoch 2 iteration 1677: 0.7740198373794556
-loss in epoch 3 iteration 1677: 0.8293889164924622
-loss in epoch 4 iteration 1677: 0.7531298398971558
-loss in epoch 5 iteration 1677: 0.7259469628334045
-Evaluating
+loss in epoch 1 iteration 1677: 0.8844078779220581
+loss in epoch 2 iteration 1677: 0.7765999436378479
+loss in epoch 3 iteration 1677: 0.7956905961036682
+loss in epoch 4 iteration 1677: 0.7328159809112549
