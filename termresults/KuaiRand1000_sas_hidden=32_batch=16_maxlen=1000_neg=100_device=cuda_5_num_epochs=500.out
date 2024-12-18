@@ -27,4 +27,13 @@ loss in epoch 2 iteration 1677: 0.7740198373794556
 loss in epoch 3 iteration 1677: 0.8293889164924622
 loss in epoch 4 iteration 1677: 0.7531298398971558
 loss in epoch 5 iteration 1677: 0.7259469628334045
-Evaluating
+Evaluatingepoch:5, time: 1662669.596195(s), valid (NDCG@5: 0.6066, HR@5: 0.7398, NDCG@10: 0.6290, HR@10: 0.8087, NDCG@20: 0.6399, HR@20: 0.8512), test (NDCG@5: 0.6061, HR@5: 0.7383, NDCG@10: 0.6290, HR@10: 0.8085, NDCG@20: 0.6397, HR@20: 0.8502)
+loss in epoch 6 iteration 1677: 0.7172173857688904
+loss in epoch 7 iteration 1677: 0.6831480264663696
+loss in epoch 8 iteration 1677: 0.6502687931060791
+loss in epoch 9 iteration 1677: 0.6883559226989746
+loss in epoch 10 iteration 1677: 0.6821505427360535
+Evaluatingepoch:10, time: 4476651.323795(s), valid (NDCG@5: 0.6037, HR@5: 0.7463, NDCG@10: 0.6255, HR@10: 0.8132, NDCG@20: 0.6364, HR@20: 0.8557), test (NDCG@5: 0.6039, HR@5: 0.7444, NDCG@10: 0.6261, HR@10: 0.8124, NDCG@20: 0.6374, HR@20: 0.8565)
+loss in epoch 11 iteration 1677: 0.6234492659568787
+loss in epoch 12 iteration 1677: 0.6130886673927307
+loss in epoch 13 iteration 1677: 0.6104789972305298
