@@ -250,3 +250,7 @@ loss in epoch 188 iteration 1677: 0.18801003694534302
 loss in epoch 189 iteration 1677: 0.19048954546451569
 loss in epoch 190 iteration 1677: 0.19069093465805054
 Evaluatingepoch:190, time: 121651649.703979(s), valid (NDCG@5: 0.7051, HR@5: 0.7998, NDCG@10: 0.7197, HR@10: 0.8444, NDCG@20: 0.7273, HR@20: 0.8741), test (NDCG@5: 0.7052, HR@5: 0.8013, NDCG@10: 0.7197, HR@10: 0.8458, NDCG@20: 0.7275, HR@20: 0.8763)
+loss in epoch 191 iteration 1677: 0.19464154541492462
+loss in epoch 192 iteration 1677: 0.18715423345565796
+loss in epoch 193 iteration 1677: 0.19170333445072174
+loss in epoch 194 iteration 1677: 0.19342105090618134
