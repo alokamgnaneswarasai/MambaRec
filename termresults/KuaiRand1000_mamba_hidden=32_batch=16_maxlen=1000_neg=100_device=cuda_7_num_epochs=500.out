@@ -352,3 +352,22 @@ loss in epoch 273 iteration 1677: 0.2118876427412033
 loss in epoch 274 iteration 1677: 0.21361443400382996
 loss in epoch 275 iteration 1677: 0.22149179875850677
 Evaluatingepoch:275, time: 140115569.895983(s), valid (NDCG@5: 0.6834, HR@5: 0.7791, NDCG@10: 0.6993, HR@10: 0.8283, NDCG@20: 0.7074, HR@20: 0.8599), test (NDCG@5: 0.6789, HR@5: 0.7772, NDCG@10: 0.6950, HR@10: 0.8264, NDCG@20: 0.7030, HR@20: 0.8579)
+loss in epoch 276 iteration 1677: 0.23066669702529907
+loss in epoch 277 iteration 1677: 0.21800529956817627
+loss in epoch 278 iteration 1677: 0.2136286497116089
+loss in epoch 279 iteration 1677: 0.211982861161232
+loss in epoch 280 iteration 1677: 0.2283293604850769
+Evaluatingepoch:280, time: 143941120.406151(s), valid (NDCG@5: 0.6864, HR@5: 0.7801, NDCG@10: 0.7026, HR@10: 0.8298, NDCG@20: 0.7101, HR@20: 0.8595), test (NDCG@5: 0.6805, HR@5: 0.7782, NDCG@10: 0.6962, HR@10: 0.8263, NDCG@20: 0.7044, HR@20: 0.8580)
+loss in epoch 281 iteration 1677: 0.2060067504644394
+loss in epoch 282 iteration 1677: 0.21249575912952423
+loss in epoch 283 iteration 1677: 0.2223559021949768
+loss in epoch 284 iteration 1677: 0.21047116816043854
+loss in epoch 285 iteration 1677: 0.20885556936264038
+Evaluatingepoch:285, time: 147767246.306181(s), valid (NDCG@5: 0.6848, HR@5: 0.7794, NDCG@10: 0.7006, HR@10: 0.8278, NDCG@20: 0.7086, HR@20: 0.8592), test (NDCG@5: 0.6800, HR@5: 0.7776, NDCG@10: 0.6959, HR@10: 0.8264, NDCG@20: 0.7041, HR@20: 0.8581)
+loss in epoch 286 iteration 1677: 0.2155277132987976
+loss in epoch 287 iteration 1677: 0.20966418087482452
+loss in epoch 288 iteration 1677: 0.2179051786661148
+loss in epoch 289 iteration 1677: 0.20857210457324982
+loss in epoch 290 iteration 1677: 0.22130383551120758
+Evaluatingepoch:290, time: 151596283.798933(s), valid (NDCG@5: 0.6835, HR@5: 0.7777, NDCG@10: 0.7001, HR@10: 0.8287, NDCG@20: 0.7079, HR@20: 0.8594), test (NDCG@5: 0.6803, HR@5: 0.7782, NDCG@10: 0.6960, HR@10: 0.8263, NDCG@20: 0.7041, HR@20: 0.8583)
+loss in epoch 291 iteration 1677: 0.21590016782283783
