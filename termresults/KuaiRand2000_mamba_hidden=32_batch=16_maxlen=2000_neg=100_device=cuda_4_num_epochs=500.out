@@ -213,4 +213,22 @@ loss in epoch 157 iteration 1677: 0.1995689421892166
 loss in epoch 158 iteration 1677: 0.1972145438194275
 loss in epoch 159 iteration 1677: 0.19216082990169525
 loss in epoch 160 iteration 1677: 0.19469241797924042
-Evaluating
+Evaluatingepoch:160, time: 98174175.216913(s), valid (NDCG@5: 0.7028, HR@5: 0.7997, NDCG@10: 0.7168, HR@10: 0.8426, NDCG@20: 0.7247, HR@20: 0.8736), test (NDCG@5: 0.7005, HR@5: 0.7984, NDCG@10: 0.7156, HR@10: 0.8445, NDCG@20: 0.7236, HR@20: 0.8758)
+loss in epoch 161 iteration 1677: 0.19909539818763733
+loss in epoch 162 iteration 1677: 0.19883553683757782
+loss in epoch 163 iteration 1677: 0.21063674986362457
+loss in epoch 164 iteration 1677: 0.1992223560810089
+loss in epoch 165 iteration 1677: 0.20118854939937592
+Evaluatingepoch:165, time: 102091190.183163(s), valid (NDCG@5: 0.7020, HR@5: 0.7989, NDCG@10: 0.7165, HR@10: 0.8432, NDCG@20: 0.7241, HR@20: 0.8730), test (NDCG@5: 0.7024, HR@5: 0.7989, NDCG@10: 0.7174, HR@10: 0.8445, NDCG@20: 0.7255, HR@20: 0.8765)
+loss in epoch 166 iteration 1677: 0.1878371685743332
+loss in epoch 167 iteration 1677: 0.18875619769096375
+loss in epoch 168 iteration 1677: 0.19473201036453247
+loss in epoch 169 iteration 1677: 0.1948097199201584
+loss in epoch 170 iteration 1677: 0.1958189308643341
+Evaluatingepoch:170, time: 106007186.765909(s), valid (NDCG@5: 0.7001, HR@5: 0.7979, NDCG@10: 0.7148, HR@10: 0.8428, NDCG@20: 0.7226, HR@20: 0.8732), test (NDCG@5: 0.6993, HR@5: 0.7984, NDCG@10: 0.7146, HR@10: 0.8450, NDCG@20: 0.7225, HR@20: 0.8763)
+loss in epoch 171 iteration 1677: 0.18690535426139832
+loss in epoch 172 iteration 1677: 0.19487816095352173
+loss in epoch 173 iteration 1677: 0.19981177151203156
+loss in epoch 174 iteration 1677: 0.19585967063903809
+loss in epoch 175 iteration 1677: 0.1990642249584198
+Evaluatingepoch:175, time: 109919672.301531(s), valid (NDCG@5: 0.7039, HR@5: 0.7992, NDCG@10: 0.7184, HR@10: 0.8438, NDCG@20: 0.7260, HR@20: 0.8738), test (NDCG@5: 0.7001, HR@5: 0.7996, NDCG@10: 0.7147, HR@10: 0.8442, NDCG@20: 0.7228, HR@20: 0.8760)

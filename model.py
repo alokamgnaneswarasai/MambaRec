@@ -221,7 +221,9 @@ class SASmambaRec(torch.nn.Module):
         self.attention_dropout = torch.nn.Dropout(p=args.dropout_rate)
 
         # Learnable weights for Mixture of Experts
-        self.mamba_weight = torch.nn.Parameter(torch.tensor(0.5))
+        # self.mamba_weight = torch.nn.Parameter(torch.tensor(0.5))
+        self.mamba_weight = torch.nn.Linear(args.hidden_units, 1)
+        
         # self.attention_weight = torch.nn.Parameter(torch.tensor(0.5))
 
         # Feed-Forward Network (Optional for added flexibility)
@@ -271,9 +273,10 @@ class SASmambaRec(torch.nn.Module):
         attn_output = self.attention_dropout(attn_output) + seqs  # Residual connection
         attn_output = self.attention_layernorm(attn_output)  # Layer normalization
         attn_output = attn_output.transpose(0, 1)  # Convert back to (batch_size, seq_len, hidden_units)
-
+        
+        mamba_weight = torch.sigmoid(self.mamba_weight(seqs.mean(dim=1)))  # Mean pooling along sequence length
         # Combine Mamba and Attention outputs using learnable weights
-        combined_output = self.mamba_weight * mamba_output + (1 - self.mamba_weight) * attn_output
+        combined_output = mamba_weight * mamba_output + (1 - mamba_weight) * attn_output
 
         # Process through Feed-Forward Network (Optional)
         feedforward_output = self.feedforward(combined_output)
@@ -822,7 +825,7 @@ class MoEMambaRec(nn.Module):
         self.moe_layers = MoE(
                 d_model=args.hidden_units,
                 num_experts=4,
-                top_k=2
+                top_k=1
             ).to(self.dev)
             
         
