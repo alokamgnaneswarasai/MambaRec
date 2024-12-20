@@ -24,3 +24,4 @@ average sequence length: 1419.07
 parameters_count: 1025316192
 loss in epoch 1 iteration 1677: 0.8710461854934692
 loss in epoch 2 iteration 1677: 0.8029069304466248
+loss in epoch 3 iteration 1677: 0.7439215183258057

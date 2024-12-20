@@ -531,4 +531,5 @@ loss in epoch 422 iteration 1677: 0.15570080280303955
 loss in epoch 423 iteration 1677: 0.14722472429275513
 loss in epoch 424 iteration 1677: 0.1485796868801117
 loss in epoch 425 iteration 1677: 0.15026581287384033
-Evaluating
+Evaluatingepoch:425, time: 170096470.948458(s), valid (NDCG@5: 0.7620, HR@5: 0.8424, NDCG@10: 0.7736, HR@10: 0.8779, NDCG@20: 0.7792, HR@20: 0.9000), test (NDCG@5: 0.7680, HR@5: 0.8511, NDCG@10: 0.7790, HR@10: 0.8847, NDCG@20: 0.7846, HR@20: 0.9071)
+loss in epoch 426 iteration 1677: 0.14504371583461761
