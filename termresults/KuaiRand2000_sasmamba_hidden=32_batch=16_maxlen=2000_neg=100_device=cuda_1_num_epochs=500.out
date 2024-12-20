@@ -1,0 +1,27 @@
+Arguments:
+backbone sasmamba
+batch_size 16
+dataset KuaiRand2000
+device cuda:1
+dropout_rate 0.5
+eval_neg_sample 100
+hidden_units 32
+inference_only False
+l2_emb 0.0
+lr 0.0005
+maxlen 2000
+name mamba
+num_blocks 2
+num_epochs 500
+num_heads 1
+state_dict_path None
+train_dir tracks256_default/
+
+user_count: 26858
+item count: 6479039
+26858
+average sequence length: 1419.07
+parameters_count: 1025328929
+loss in epoch 1 iteration 1677: 0.8705211281776428
+loss in epoch 2 iteration 1677: 0.8222979307174683
+loss in epoch 3 iteration 1677: 0.7162963151931763
