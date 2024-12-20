@@ -7,3 +7,6 @@ data/
 *.pt
 __pycache__/
 wandb/
+
+#ignore nohup.out file
+nohup.out

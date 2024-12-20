@@ -22,3 +22,24 @@ item count: 8825518
 26858
 average sequence length: 2159.58
 parameters_count: 1025424929
+loss in epoch 1 iteration 1677: 0.8664724230766296
+loss in epoch 2 iteration 1677: 0.7558131217956543
+loss in epoch 3 iteration 1677: 0.7661007046699524
+loss in epoch 4 iteration 1677: 0.6488507986068726
+loss in epoch 5 iteration 1677: 0.615627646446228
+Evaluatingepoch:5, time: 2316295.857191(s), valid (NDCG@5: 0.6118, HR@5: 0.7631, NDCG@10: 0.6347, HR@10: 0.8332, NDCG@20: 0.6462, HR@20: 0.8782), test (NDCG@5: 0.6126, HR@5: 0.7644, NDCG@10: 0.6369, HR@10: 0.8383, NDCG@20: 0.6486, HR@20: 0.8842)
+loss in epoch 6 iteration 1677: 0.6130605340003967
+loss in epoch 7 iteration 1677: 0.5631376504898071
+loss in epoch 8 iteration 1677: 0.5075659155845642
+loss in epoch 9 iteration 1677: 0.5250253677368164
+loss in epoch 10 iteration 1677: 0.49523600935935974
+Evaluatingepoch:10, time: 4586145.366192(s), valid (NDCG@5: 0.6194, HR@5: 0.7687, NDCG@10: 0.6416, HR@10: 0.8367, NDCG@20: 0.6527, HR@20: 0.8802), test (NDCG@5: 0.6179, HR@5: 0.7700, NDCG@10: 0.6409, HR@10: 0.8407, NDCG@20: 0.6526, HR@20: 0.8864)
+loss in epoch 11 iteration 1677: 0.488925576210022
+loss in epoch 12 iteration 1677: 0.43561744689941406
+loss in epoch 13 iteration 1677: 0.41133779287338257
+loss in epoch 14 iteration 1677: 0.412939190864563
+loss in epoch 15 iteration 1677: 0.3928917646408081
+Evaluatingepoch:15, time: 6856054.261208(s), valid (NDCG@5: 0.6533, HR@5: 0.7805, NDCG@10: 0.6731, HR@10: 0.8411, NDCG@20: 0.6825, HR@20: 0.8782), test (NDCG@5: 0.6514, HR@5: 0.7804, NDCG@10: 0.6721, HR@10: 0.8439, NDCG@20: 0.6827, HR@20: 0.8859)
+loss in epoch 16 iteration 1677: 0.3515973687171936
+loss in epoch 17 iteration 1677: 0.33783671259880066
+loss in epoch 18 iteration 1677: 0.3441424071788788
