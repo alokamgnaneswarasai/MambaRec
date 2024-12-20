@@ -25,3 +25,6 @@ parameters_count: 1025316192
 loss in epoch 1 iteration 1677: 0.8710461854934692
 loss in epoch 2 iteration 1677: 0.8029069304466248
 loss in epoch 3 iteration 1677: 0.7439215183258057
+loss in epoch 4 iteration 1677: 0.728801429271698
+loss in epoch 5 iteration 1677: 0.667941153049469
+Evaluatingepoch:5, time: 2522913.456678(s), valid (NDCG@5: 0.5933, HR@5: 0.7394, NDCG@10: 0.6169, HR@10: 0.8116, NDCG@20: 0.6284, HR@20: 0.8565), test (NDCG@5: 0.5973, HR@5: 0.7386, NDCG@10: 0.6219, HR@10: 0.8138, NDCG@20: 0.6340, HR@20: 0.8609)

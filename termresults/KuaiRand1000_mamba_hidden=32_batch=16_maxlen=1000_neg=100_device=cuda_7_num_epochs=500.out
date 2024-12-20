@@ -514,3 +514,7 @@ loss in epoch 408 iteration 1677: 0.20103415846824646
 loss in epoch 409 iteration 1677: 0.20057083666324615
 loss in epoch 410 iteration 1677: 0.19714371860027313
 Evaluatingepoch:410, time: 214331053.457499(s), valid (NDCG@5: 0.6867, HR@5: 0.7805, NDCG@10: 0.7029, HR@10: 0.8301, NDCG@20: 0.7105, HR@20: 0.8600), test (NDCG@5: 0.6833, HR@5: 0.7798, NDCG@10: 0.6993, HR@10: 0.8286, NDCG@20: 0.7072, HR@20: 0.8595)
+loss in epoch 411 iteration 1677: 0.21215201914310455
+loss in epoch 412 iteration 1677: 0.21342884004116058
+loss in epoch 413 iteration 1677: 0.20375485718250275
+loss in epoch 414 iteration 1677: 0.19147014617919922
