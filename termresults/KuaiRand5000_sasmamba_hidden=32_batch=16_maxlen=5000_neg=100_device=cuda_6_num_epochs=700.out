@@ -1,0 +1,24 @@
+Arguments:
+backbone sasmamba
+batch_size 16
+dataset KuaiRand5000
+device cuda:6
+dropout_rate 0.5
+eval_neg_sample 100
+hidden_units 32
+inference_only False
+l2_emb 0.0
+lr 0.0005
+maxlen 5000
+name mamba
+num_blocks 2
+num_epochs 700
+num_heads 1
+state_dict_path None
+train_dir tracks256_default/
+
+user_count: 26858
+item count: 8825518
+26858
+average sequence length: 2159.58
+parameters_count: 1025424929
