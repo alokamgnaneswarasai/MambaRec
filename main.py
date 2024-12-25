@@ -176,7 +176,7 @@ if __name__ == '__main__':
                     epoch, T, t_valid[0], t_valid[1], t_valid[2], t_valid[3], t_valid[4], t_valid[5],
                     t_test[0], t_test[1], t_test[2], t_test[3], t_test[4], t_test[5]))
 
-            if t_valid[3] > best_HR_10_val:
+            if epoch%100==0 and t_valid[3] > best_HR_10_val:
                 best_HR_10_val = t_valid[3]
                 best_epoch = epoch
                  
