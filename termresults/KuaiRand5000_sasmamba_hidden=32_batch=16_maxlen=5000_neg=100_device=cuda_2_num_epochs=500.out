@@ -66,3 +66,46 @@ loss in epoch 35 iteration 1677: 0.2460387647151947
 Evaluatingepoch:35, time: 34428908.708811(s), valid (NDCG@5: 0.6911, HR@5: 0.7973, NDCG@10: 0.7063, HR@10: 0.8437, NDCG@20: 0.7156, HR@20: 0.8803), test (NDCG@5: 0.6903, HR@5: 0.8013, NDCG@10: 0.7061, HR@10: 0.8499, NDCG@20: 0.7148, HR@20: 0.8838)
 loss in epoch 36 iteration 1677: 0.24248087406158447
 loss in epoch 37 iteration 1677: 0.2332458198070526
+loss in epoch 38 iteration 1677: 0.25149354338645935
+loss in epoch 39 iteration 1677: 0.2337125837802887
+loss in epoch 40 iteration 1677: 0.25321850180625916
+Evaluatingepoch:40, time: 39345625.206709(s), valid (NDCG@5: 0.6924, HR@5: 0.7982, NDCG@10: 0.7078, HR@10: 0.8455, NDCG@20: 0.7166, HR@20: 0.8799), test (NDCG@5: 0.6916, HR@5: 0.8000, NDCG@10: 0.7075, HR@10: 0.8487, NDCG@20: 0.7165, HR@20: 0.8839)
+loss in epoch 41 iteration 1677: 0.22605498135089874
+loss in epoch 42 iteration 1677: 0.22507476806640625
+loss in epoch 43 iteration 1677: 0.24424098432064056
+loss in epoch 44 iteration 1677: 0.2299526035785675
+loss in epoch 45 iteration 1677: 0.22167807817459106
+Evaluatingepoch:45, time: 44530863.560438(s), valid (NDCG@5: 0.6975, HR@5: 0.8013, NDCG@10: 0.7124, HR@10: 0.8471, NDCG@20: 0.7209, HR@20: 0.8806), test (NDCG@5: 0.6967, HR@5: 0.8053, NDCG@10: 0.7114, HR@10: 0.8502, NDCG@20: 0.7201, HR@20: 0.8846)
+loss in epoch 46 iteration 1677: 0.23995867371559143
+loss in epoch 47 iteration 1677: 0.21919389069080353
+loss in epoch 48 iteration 1677: 0.21856293082237244
+loss in epoch 49 iteration 1677: 0.2150184065103531
+loss in epoch 50 iteration 1677: 0.22256390750408173
+Evaluatingepoch:50, time: 49452937.436819(s), valid (NDCG@5: 0.6972, HR@5: 0.8004, NDCG@10: 0.7125, HR@10: 0.8472, NDCG@20: 0.7208, HR@20: 0.8798), test (NDCG@5: 0.6976, HR@5: 0.8028, NDCG@10: 0.7128, HR@10: 0.8491, NDCG@20: 0.7212, HR@20: 0.8822)
+loss in epoch 51 iteration 1677: 0.2234668731689453
+loss in epoch 52 iteration 1677: 0.22071944177150726
+loss in epoch 53 iteration 1677: 0.2188582867383957
+loss in epoch 54 iteration 1677: 0.21662037074565887
+loss in epoch 55 iteration 1677: 0.2190917432308197
+Evaluatingepoch:55, time: 54369091.034889(s), valid (NDCG@5: 0.6984, HR@5: 0.8022, NDCG@10: 0.7132, HR@10: 0.8474, NDCG@20: 0.7219, HR@20: 0.8815), test (NDCG@5: 0.6970, HR@5: 0.8031, NDCG@10: 0.7126, HR@10: 0.8508, NDCG@20: 0.7209, HR@20: 0.8835)
+loss in epoch 56 iteration 1677: 0.2171403467655182
+loss in epoch 57 iteration 1677: 0.20013512670993805
+loss in epoch 58 iteration 1677: 0.21632468700408936
+loss in epoch 59 iteration 1677: 0.22624947130680084
+loss in epoch 60 iteration 1677: 0.20417015254497528
+Evaluatingepoch:60, time: 59271544.056416(s), valid (NDCG@5: 0.7003, HR@5: 0.8030, NDCG@10: 0.7149, HR@10: 0.8477, NDCG@20: 0.7233, HR@20: 0.8806), test (NDCG@5: 0.6989, HR@5: 0.8056, NDCG@10: 0.7138, HR@10: 0.8513, NDCG@20: 0.7220, HR@20: 0.8838)
+loss in epoch 61 iteration 1677: 0.2202037274837494
+loss in epoch 62 iteration 1677: 0.20916980504989624
+loss in epoch 63 iteration 1677: 0.21333274245262146
+loss in epoch 64 iteration 1677: 0.21230126917362213
+loss in epoch 65 iteration 1677: 0.20375342667102814
+Evaluatingepoch:65, time: 64177125.657082(s), valid (NDCG@5: 0.7051, HR@5: 0.8058, NDCG@10: 0.7197, HR@10: 0.8505, NDCG@20: 0.7280, HR@20: 0.8833), test (NDCG@5: 0.7059, HR@5: 0.8105, NDCG@10: 0.7202, HR@10: 0.8546, NDCG@20: 0.7282, HR@20: 0.8858)
+loss in epoch 66 iteration 1677: 0.2040964812040329
+loss in epoch 67 iteration 1677: 0.21238532662391663
+loss in epoch 68 iteration 1677: 0.21120454370975494
+loss in epoch 69 iteration 1677: 0.193036749958992
+loss in epoch 70 iteration 1677: 0.1943541169166565
+Evaluatingepoch:70, time: 69096457.874775(s), valid (NDCG@5: 0.7071, HR@5: 0.8075, NDCG@10: 0.7217, HR@10: 0.8522, NDCG@20: 0.7298, HR@20: 0.8840), test (NDCG@5: 0.7075, HR@5: 0.8100, NDCG@10: 0.7229, HR@10: 0.8573, NDCG@20: 0.7306, HR@20: 0.8876)
+loss in epoch 71 iteration 1677: 0.19454191625118256
+loss in epoch 72 iteration 1677: 0.21146464347839355
+loss in epoch 73 iteration 1677: 0.209431990981102
