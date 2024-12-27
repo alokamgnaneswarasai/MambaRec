@@ -1,0 +1,40 @@
+Arguments:
+backbone sasmamba
+batch_size 16
+dataset KuaiRand5000
+device cuda:7
+dropout_rate 0.5
+eval_neg_sample 100
+hidden_units 32
+inference_only False
+l2_emb 0.0
+lr 0.0005
+maxlen 3000
+name mamba
+num_blocks 2
+num_epochs 500
+num_heads 1
+state_dict_path None
+train_dir tracks256_default/
+
+user_count: 26858
+item count: 8825518
+26858
+average sequence length: 2159.58
+parameters_count: 1025360929
+loss in epoch 1 iteration 1677: 0.849305272102356
+loss in epoch 2 iteration 1677: 0.7549052834510803
+loss in epoch 3 iteration 1677: 0.7150866985321045
+loss in epoch 4 iteration 1677: 0.6797935962677002
+loss in epoch 5 iteration 1677: 0.6508634686470032
+Evaluatingepoch:5, time: 435145.304441(s), valid (NDCG@5: 0.6265, HR@5: 0.7743, NDCG@10: 0.6482, HR@10: 0.8404, NDCG@20: 0.6587, HR@20: 0.8817), test (NDCG@5: 0.6281, HR@5: 0.7760, NDCG@10: 0.6513, HR@10: 0.8470, NDCG@20: 0.6620, HR@20: 0.8892)
+loss in epoch 6 iteration 1677: 0.6073018312454224
+loss in epoch 7 iteration 1677: 0.6017682552337646
+loss in epoch 8 iteration 1677: 0.5757953524589539
+loss in epoch 9 iteration 1677: 0.5365467667579651
+loss in epoch 10 iteration 1677: 0.4798978269100189
+Evaluatingepoch:10, time: 877508.991718(s), valid (NDCG@5: 0.6263, HR@5: 0.7748, NDCG@10: 0.6479, HR@10: 0.8409, NDCG@20: 0.6584, HR@20: 0.8818), test (NDCG@5: 0.6268, HR@5: 0.7750, NDCG@10: 0.6498, HR@10: 0.8453, NDCG@20: 0.6609, HR@20: 0.8887)
+loss in epoch 11 iteration 1677: 0.46010810136795044
+loss in epoch 12 iteration 1677: 0.45857828855514526
+loss in epoch 13 iteration 1677: 0.43202611804008484
+loss in epoch 14 iteration 1677: 0.4150128960609436

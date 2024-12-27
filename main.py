@@ -161,8 +161,8 @@ if __name__ == '__main__':
         
         
     
-        if not os.path.exists(f'saved_models/{args.dataset}/{args.backbone}/'):
-            os.makedirs(f'saved_models/{args.dataset}/{args.backbone}')
+        if not os.path.exists(f'saved_models/{args.dataset}/{args.backbone}/noise'):
+            os.makedirs(f'saved_models/{args.dataset}/{args.backbone}/noise')
             
         if epoch % 5 == 0:
             model.eval()
@@ -180,7 +180,7 @@ if __name__ == '__main__':
                 best_HR_10_val = t_valid[3]
                 best_epoch = epoch
                  
-                folder = f'saved_models/{args.dataset}/{args.backbone}'
+                folder = f'saved_models/{args.dataset}/{args.backbone}/noise'
                 # fname = 'SASRec.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.eval_neg_sample={}.pth'
                 fname='{}.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.eval_neg_sample={}.pth'
                 # fname = fname.format(args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units,
@@ -193,7 +193,7 @@ if __name__ == '__main__':
             model.train()
 
         if epoch == args.num_epochs:
-            folder = f'saved_models/{args.dataset}/{args.backbone}'
+            folder = f'saved_models/{args.dataset}/{args.backbone}/noise'
             fname = '{}.epoch={}.lr={}.layer={}.head={}.hidden={}.maxlen={}.eval_neg_sample={}_final.pth'
             fname = fname.format(args.dataset, args.num_epochs, args.lr, args.num_blocks, args.num_heads, args.hidden_units,
                                  args.maxlen, args.eval_neg_sample)

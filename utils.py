@@ -47,10 +47,10 @@ def sample_function(user_train, usernum, itemnum, batch_size, maxlen, result_que
             if idx == -1: break
         
         #Inject noise into 10% of the sequence tokens
-        # num_tokens_to_noise = int(0.1 * maxlen)
-        # token_indices = np.random.choice(maxlen, num_tokens_to_noise, replace=False)
-        # for idx in token_indices:
-        #     seq[idx] = random_item_from_training()
+        num_tokens_to_noise = int(0.01 * maxlen)
+        token_indices = np.random.choice(maxlen, num_tokens_to_noise, replace=False)
+        for idx in token_indices:
+            seq[idx] = random_item_from_training()
             
         # print(f" seq shape: {seq.shape}, pos shape: {pos.shape}, neg shape: {neg.shape}")
         return (user, seq, pos, neg)
