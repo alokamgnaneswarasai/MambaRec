@@ -29,8 +29,8 @@ device="${device:-cuda:0}"
 
 # Construct the output filename dynamically
 output_dir="./termresults"
-output_file="${output_dir}/${dataset}_${backbone}_hidden=${hidden_units}_batch=${batch_size}_maxlen=${maxlen}_neg=${eval_neg_sample}_device=$(echo $device | tr ':' '_')_num_epochs=${num_epochs}_noise.out"
-
+# output_file="${output_dir}/${dataset}_${backbone}_hidden=${hidden_units}_batch=${batch_size}_maxlen=${maxlen}_neg=${eval_neg_sample}_device=$(echo $device | tr ':' '_')_num_epochs=${num_epochs}_noise.out"
+output_file="${output_dir}/${dataset}_${backbone}_hidden=${hidden_units}_batch=${batch_size}_maxlen=${maxlen}_neg=${eval_neg_sample}_device=$(echo $device | tr ':' '_')_num_epochs=${num_epochs}.out"
 # Create the output directory if it doesn't exist
 mkdir -p "$output_dir"
 

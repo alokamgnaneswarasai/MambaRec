@@ -266,7 +266,7 @@ class SASmambaRec(torch.nn.Module):
 
         # Process through Mamba block
         mamba_output = self.mamba1(seqs)
-
+        
         # Process through Self-Attention
         seqs = seqs.transpose(0, 1)  # Convert to (seq_len, batch_size, hidden_units) for attention
         attn_output, _ = self.attention_layer(seqs, seqs, seqs)
@@ -274,7 +274,11 @@ class SASmambaRec(torch.nn.Module):
         attn_output = self.attention_layernorm(attn_output)  # Layer normalization
         attn_output = attn_output.transpose(0, 1)  # Convert back to (batch_size, seq_len, hidden_units)
         
-        mamba_weight = torch.sigmoid(self.mamba_weight(seqs.mean(dim=1)))  # Mean pooling along sequence length
+        mamba_weight = torch.sigmoid(self.mamba_weight(seqs.mean(dim=0))).unsqueeze(-1)  # Mean pooling along sequence length
+        # print('mamba_output',mamba_output.shape)        
+        # mamba_weight = torch.sigmoid(self.mamba_weight(seqs))  # shape (seq_len, batch_size, 1)
+        # print('mamba_weight',mamba_weight.shape)
+        
         # Combine Mamba and Attention outputs using learnable weights
         combined_output = mamba_weight * mamba_output + (1 - mamba_weight) * attn_output
 
