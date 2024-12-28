@@ -896,3 +896,4 @@ class MoE(nn.Module):
         weighted_outputs = (top_k_outputs * top_k_values.unsqueeze(-2)).sum(dim=-1)
        
         return weighted_outputs
+    

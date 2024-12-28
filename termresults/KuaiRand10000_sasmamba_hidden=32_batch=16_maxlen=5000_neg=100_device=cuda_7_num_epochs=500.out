@@ -23,3 +23,11 @@ item count: 9776718
 average sequence length: 2438.63
 parameters_count: 1025424929
 loss in epoch 1 iteration 1677: 0.8253478407859802
+loss in epoch 2 iteration 1677: 0.7949339151382446
+loss in epoch 3 iteration 1677: 0.6910737752914429
+loss in epoch 4 iteration 1677: 0.7154623866081238
+loss in epoch 5 iteration 1677: 0.624022901058197
+Evaluatingepoch:5, time: 2242042.210817(s), valid (NDCG@5: 0.6269, HR@5: 0.7762, NDCG@10: 0.6506, HR@10: 0.8484, NDCG@20: 0.6611, HR@20: 0.8897), test (NDCG@5: 0.6312, HR@5: 0.7838, NDCG@10: 0.6551, HR@10: 0.8570, NDCG@20: 0.6660, HR@20: 0.8996)
+loss in epoch 6 iteration 1677: 0.5716626644134521
+loss in epoch 7 iteration 1677: 0.5926921963691711
+loss in epoch 8 iteration 1677: 0.5320568084716797
