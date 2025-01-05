@@ -10,3 +10,6 @@ wandb/
 
 #ignore nohup.out file
 nohup.out
+
+# ignore all the files starting with slurm-%j.out
+slurm-*.out

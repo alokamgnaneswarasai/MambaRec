@@ -21,16 +21,10 @@ user_count: 6040
 item count: 3416
 6040
 average sequence length: 163.50
-parameters_count: 295232
-loss in epoch 1 iteration 376: 0.9224576354026794
-loss in epoch 2 iteration 376: 0.8673632740974426
-loss in epoch 3 iteration 376: 0.7257516980171204
-loss in epoch 4 iteration 376: 0.7311584949493408
-loss in epoch 5 iteration 376: 0.7496911287307739
-Evaluatingepoch:5, time: 152292.477608(s), valid (NDCG@5: 0.2614, HR@5: 0.3906, NDCG@10: 0.3221, HR@10: 0.5788, NDCG@20: 0.3664, HR@20: 0.7538), test (NDCG@5: 0.2542, HR@5: 0.3826, NDCG@10: 0.3064, HR@10: 0.5445, NDCG@20: 0.3532, HR@20: 0.7298)
-loss in epoch 6 iteration 376: 0.6700910329818726
-loss in epoch 7 iteration 376: 0.7725923657417297
-loss in epoch 8 iteration 376: 0.6701823472976685
-loss in epoch 9 iteration 376: 0.6893718242645264
-loss in epoch 10 iteration 376: 0.5297756195068359
+parameters_count: 286912
+loss in epoch 1 iteration 376: 0.764262318611145
+loss in epoch 2 iteration 376: 0.6171420812606812
+loss in epoch 3 iteration 376: 0.468161404132843
+loss in epoch 4 iteration 376: 0.4187929630279541
+loss in epoch 5 iteration 376: 0.3611668348312378
 Evaluating

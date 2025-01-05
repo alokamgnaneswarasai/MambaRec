@@ -948,16 +948,16 @@ class SAMBA4Rec(nn.Module):
         self.swa = SWA(d_model=args.hidden_units, window_size=4)  # Define window size
 
         # Fully connected MLP layers
-        self.mlp1 = nn.Sequential(
-            nn.Linear(args.hidden_units, args.hidden_units),
-            nn.ReLU(),
-            nn.Dropout(p=args.dropout_rate)
-        )
-        self.mlp2 = nn.Sequential(
-            nn.Linear(args.hidden_units, args.hidden_units),
-            nn.ReLU(),
-            nn.Dropout(p=args.dropout_rate)
-        )
+        # self.mlp1 = nn.Sequential(
+        #     nn.Linear(args.hidden_units, args.hidden_units),
+        #     nn.ReLU(),
+        #     nn.Dropout(p=args.dropout_rate)
+        # )
+        # self.mlp2 = nn.Sequential(
+        #     nn.Linear(args.hidden_units, args.hidden_units),
+        #     nn.ReLU(),
+        #     nn.Dropout(p=args.dropout_rate)
+        # )
 
     def log2feats(self, log_seqs):
         seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
@@ -970,13 +970,15 @@ class SAMBA4Rec(nn.Module):
         mamba_output = self.mamba(seqs)
 
         # Apply MLP1
-        mlp1_output = self.mlp1(mamba_output)
+        # mlp1_output = self.mlp1(mamba_output)
 
         # Apply SWA
-        swa_output = self.swa(mlp1_output)
+        # swa_output = self.swa(mlp1_output)
 
         # Apply MLP2
-        log_feats = self.mlp2(swa_output)
+        # log_feats = self.mlp2(swa_output)
+        
+        log_feats =  self.swa(mamba_output)
 
         return log_feats
 
