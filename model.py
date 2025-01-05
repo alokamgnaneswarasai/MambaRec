@@ -897,3 +897,105 @@ class MoE(nn.Module):
        
         return weighted_outputs
     
+    
+class SWA(nn.Module):
+    """
+    Sliding Window Attention (SWA) Layer
+    """
+    def __init__(self, d_model, window_size):
+        super(SWA, self).__init__()
+        self.d_model = d_model
+        self.window_size = window_size
+        self.attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=8, batch_first=True)
+
+    def forward(self, x):
+        # Implement sliding window mechanism
+        seq_len = x.size(1)
+        outputs = []
+        for start in range(0, seq_len, self.window_size):
+            end = min(start + self.window_size, seq_len)
+            window_input = x[:, start:end, :]  # Extract window
+            attn_output, _ = self.attention(window_input, window_input, window_input)
+            outputs.append(attn_output)
+        
+        return torch.cat(outputs, dim=1)
+
+
+class SAMBA4Rec(nn.Module):
+    """
+    SAMBA4Rec: Recommendation model with SAMBA architecture
+    """
+    def __init__(self, user_num, item_num, args):
+        super(SAMBA4Rec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+
+        # Mamba layer
+        self.mamba = Mamba(
+            d_model=args.hidden_units,
+            d_state=32,
+            d_conv=4,
+            expand=2,
+        ).to(self.dev)
+
+        # Sliding Window Attention (SWA) layer
+        self.swa = SWA(d_model=args.hidden_units, window_size=4)  # Define window size
+
+        # Fully connected MLP layers
+        self.mlp1 = nn.Sequential(
+            nn.Linear(args.hidden_units, args.hidden_units),
+            nn.ReLU(),
+            nn.Dropout(p=args.dropout_rate)
+        )
+        self.mlp2 = nn.Sequential(
+            nn.Linear(args.hidden_units, args.hidden_units),
+            nn.ReLU(),
+            nn.Dropout(p=args.dropout_rate)
+        )
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+
+        # Apply Mamba layer
+        mamba_output = self.mamba(seqs)
+
+        # Apply MLP1
+        mlp1_output = self.mlp1(mamba_output)
+
+        # Apply SWA
+        swa_output = self.swa(mlp1_output)
+
+        # Apply MLP2
+        log_feats = self.mlp2(swa_output)
+
+        return log_feats
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs)
+        final_feat = log_feats[:, -1, :]  # Use the last output from the sequence
+
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+
+        return logits
