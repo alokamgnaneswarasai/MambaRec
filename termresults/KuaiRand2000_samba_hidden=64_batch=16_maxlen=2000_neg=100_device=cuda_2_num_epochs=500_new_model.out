@@ -1,0 +1,24 @@
+Arguments:
+backbone samba
+batch_size 16
+dataset KuaiRand2000
+device cuda:2
+dropout_rate 0.5
+eval_neg_sample 100
+hidden_units 64
+inference_only False
+l2_emb 0.0
+lr 0.0005
+maxlen 2000
+name mamba
+num_blocks 2
+num_epochs 500
+num_heads 1
+state_dict_path None
+train_dir tracks256_default/
+
+user_count: 26858
+item count: 6479039
+26858
+average sequence length: 1419.07
+parameters_count: 2050661824

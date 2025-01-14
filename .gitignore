@@ -1,6 +1,7 @@
 *.txt
 *.csv
 *.inter
+!images/
 *.png
 data/
 *.pth
@@ -13,3 +14,4 @@ nohup.out
 
 # ignore all the files starting with slurm-%j.out
 slurm-*.out
+
