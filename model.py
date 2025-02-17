@@ -1001,3 +1001,88 @@ class SAMBA4Rec(nn.Module):
         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
 
         return logits
+    
+import torch
+import torch.nn as nn
+import torch.nn.functional as F    
+class HourglassTransformer(nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(HourglassTransformer, self).__init__()
+        self.user_num = user_num
+        self.item_num = item_num
+        self.device = args.device
+        
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+        
+        self.encoder = nn.TransformerEncoderLayer(
+            d_model=args.hidden_units,
+            nhead=args.num_heads,
+            dropout=args.dropout_rate,
+            batch_first=True
+        )
+        self.decoder = nn.TransformerDecoderLayer(
+            d_model=args.hidden_units,
+            nhead=args.num_heads,
+            dropout=args.dropout_rate,
+            batch_first=True
+        )
+        
+        self.num_layers = args.num_blocks
+        self.scaling_factors =  [2, 2]
+    
+    def shortening(self, x, k):
+        """ Shift right and downsample """
+        x = torch.cat([torch.zeros_like(x[:, :1, :]), x[:, :-1, :]], dim=1)
+        return x[:, ::k, :]
+    
+    def upsampling(self, x, x_shortened, k):
+        """ Restore sequence length """
+        x_upsampled = F.interpolate(x_shortened.permute(0, 2, 1), size=x.shape[1], mode='nearest')
+        x_upsampled = x_upsampled.permute(0, 2, 1)  # Restore original shape (batch, seq_len, features)
+        
+        # print(f'x.shape: {x.shape}, x_shortened.shape: {x_shortened.shape}, x_upsampled.shape: {x_upsampled.shape}')
+        
+        return x + x_upsampled  # Now x_upsampled has the same shape as x
+    
+    def hourglass(self, x, scaling_factors):
+        
+        # print(x.shape)
+        x = self.encoder(x)
+        
+        if not scaling_factors:
+            return self.decoder(x, x)
+        
+        k = scaling_factors[0]
+        x_shortened = self.shortening(x, k)
+        x_processed = self.hourglass(x_shortened, scaling_factors[1:])
+        x = self.upsampling(x, x_processed, k)
+        
+        return self.decoder(x, x)
+    
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.device))
+        seqs += self.pos_emb(torch.arange(seqs.shape[1]).to(self.device))
+        seqs = self.emb_dropout(seqs)
+        
+        return self.hourglass(seqs, self.scaling_factors)
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.device))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.device))
+        
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+        
+        return pos_logits, neg_logits
+    
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs)
+        final_feat = log_feats[:, -1, :]
+        
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.device))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        
+        return logits

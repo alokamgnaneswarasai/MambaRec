@@ -4,7 +4,7 @@ import torch
 import argparse
 import wandb
 import warnings
-from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec
+from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec,HourglassTransformer
 from utils import *
 from tqdm import tqdm
 
@@ -110,6 +110,9 @@ if __name__ == '__main__':
         
     elif args.backbone == 'samba':
         model = SAMBA4Rec(usernum, itemnum, args).to(args.device)
+        
+    elif args.backbone =='hourglass':
+        model = HourglassTransformer(usernum,itemnum,args).to(args.device)
         
         
     for name, param in model.named_parameters():
