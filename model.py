@@ -1005,6 +1005,179 @@ class SAMBA4Rec(nn.Module):
 import torch
 import torch.nn as nn
 import torch.nn.functional as F    
+# class HourglassTransformer(nn.Module):
+#     def __init__(self, user_num, item_num, args):
+#         super(HourglassTransformer, self).__init__()
+#         self.user_num = user_num
+#         self.item_num = item_num
+#         self.device = args.device
+        
+#         self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+#         self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+#         self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+        
+#         self.encoder = nn.TransformerEncoderLayer(
+#             d_model=args.hidden_units,
+#             nhead=args.num_heads,
+#             dropout=args.dropout_rate,
+#             batch_first=True
+#         )
+#         self.decoder = nn.TransformerDecoderLayer(
+#             d_model=args.hidden_units,
+#             nhead=args.num_heads,
+#             dropout=args.dropout_rate,
+#             batch_first=True
+#         )
+        
+#         self.num_layers = args.num_blocks
+#         self.scaling_factors =  [2, 2]
+    
+#     def shortening(self, x, k):
+#         """ Shift right and downsample """
+#         x = torch.cat([torch.zeros_like(x[:, :1, :]), x[:, :-1, :]], dim=1)
+#         return x[:, ::k, :]
+    
+#     def upsampling(self, x, x_shortened, k):
+#         """ Restore sequence length """
+#         x_upsampled = F.interpolate(x_shortened.permute(0, 2, 1), size=x.shape[1], mode='nearest')
+#         x_upsampled = x_upsampled.permute(0, 2, 1)  # Restore original shape (batch, seq_len, features)
+        
+#         # print(f'x.shape: {x.shape}, x_shortened.shape: {x_shortened.shape}, x_upsampled.shape: {x_upsampled.shape}')
+        
+#         return x + x_upsampled  # Now x_upsampled has the same shape as x
+    
+#     def hourglass(self, x, scaling_factors):
+        
+#         # print(x.shape)
+#         x = self.encoder(x)
+        
+#         if not scaling_factors:
+#             return self.decoder(x, x)
+        
+#         k = scaling_factors[0]
+#         x_shortened = self.shortening(x, k)
+#         x_processed = self.hourglass(x_shortened, scaling_factors[1:])
+#         x = self.upsampling(x, x_processed, k)
+        
+#         return self.decoder(x, x)
+    
+#     def log2feats(self, log_seqs):
+#         seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.device))
+#         seqs += self.pos_emb(torch.arange(seqs.shape[1]).to(self.device))
+#         seqs = self.emb_dropout(seqs)
+        
+#         return self.hourglass(seqs, self.scaling_factors)
+
+#     def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+#         log_feats = self.log2feats(log_seqs)
+#         pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.device))
+#         neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.device))
+        
+#         pos_logits = (log_feats * pos_embs).sum(dim=-1)
+#         neg_logits = (log_feats * neg_embs).sum(dim=-1)
+        
+#         return pos_logits, neg_logits
+    
+#     def predict(self, user_ids, log_seqs, item_indices):
+#         log_feats = self.log2feats(log_seqs)
+#         final_feat = log_feats[:, -1, :]
+        
+#         item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.device))
+#         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        
+#         return logits
+
+# class HourglassTransformer(nn.Module):
+#     def __init__(self, user_num, item_num, args):
+#         super(HourglassTransformer, self).__init__()
+#         self.user_num = user_num
+#         self.item_num = item_num
+#         self.device = args.device
+        
+#         self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+#         self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+#         self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+        
+#         self.encoder = nn.TransformerEncoderLayer(
+#             d_model=args.hidden_units,
+#             nhead=args.num_heads,
+#             dropout=args.dropout_rate,
+#             batch_first=True
+#         )
+#         self.decoder = nn.TransformerDecoderLayer(
+#             d_model=args.hidden_units,
+#             nhead=args.num_heads,
+#             dropout=args.dropout_rate,
+#             batch_first=True
+#         )
+        
+#         self.num_layers = args.num_blocks
+#         self.scaling_factors =  [2, 2]
+
+#     def attention_downsample(self, x, k):
+#         """ Attention-based downsampling by aggregating attention over k steps """
+#         attention_scores = torch.bmm(x, x.transpose(1, 2))  # Shape: (batch_size, seq_len, seq_len)
+#         attention_weights = F.softmax(attention_scores, dim=-1)  # Normalize across sequence
+#         downsampled = torch.bmm(attention_weights, x)  # Apply attention weights to the sequence
+        
+#         # Now take only every k-th token (downsampling factor)
+#         downsampled = downsampled[:, ::k, :]
+#         return downsampled
+
+#     def attention_upsample(self, x_shortened, target_len):
+#         """ Attention-based upsampling by restoring sequence length """
+#         attention_scores = torch.bmm(x_shortened, x_shortened.transpose(1, 2))  # Shape: (batch_size, reduced_len, reduced_len)
+#         attention_weights = F.softmax(attention_scores, dim=-1)  # Normalize
+        
+#         upsampled = torch.bmm(attention_weights, x_shortened)  # Apply attention
+#         # Upsample the sequence length
+#         upsampled = F.interpolate(upsampled.permute(0, 2, 1), size=target_len, mode='nearest')
+#         upsampled = upsampled.permute(0, 2, 1)
+#         return upsampled
+
+#     def hourglass(self, x, scaling_factors):
+#         """ Apply attention-based upsampling and downsampling recursively """
+#         x = self.encoder(x)
+        
+#         if not scaling_factors:
+#             return self.decoder(x, x)
+        
+#         k = scaling_factors[0]
+#         x_shortened = self.attention_downsample(x, k)
+#         x_processed = self.hourglass(x_shortened, scaling_factors[1:])
+#         x_upsampled = self.attention_upsample(x_processed, x.shape[1])
+        
+#         return self.decoder(x_upsampled, x)
+
+#     def log2feats(self, log_seqs):
+#         seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.device))
+#         seqs += self.pos_emb(torch.arange(seqs.shape[1]).to(self.device))
+#         seqs = self.emb_dropout(seqs)
+        
+#         return self.hourglass(seqs, self.scaling_factors)
+
+#     def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+#         log_feats = self.log2feats(log_seqs)
+#         pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.device))
+#         neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.device))
+        
+#         pos_logits = (log_feats * pos_embs).sum(dim=-1)
+#         neg_logits = (log_feats * neg_embs).sum(dim=-1)
+        
+#         return pos_logits, neg_logits
+    
+#     def predict(self, user_ids, log_seqs, item_indices):
+#         log_feats = self.log2feats(log_seqs)
+#         final_feat = log_feats[:, -1, :]
+        
+#         item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.device))
+#         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        
+#         return logits
+
+
+
+
 class HourglassTransformer(nn.Module):
     def __init__(self, user_num, item_num, args):
         super(HourglassTransformer, self).__init__()
@@ -1030,38 +1203,48 @@ class HourglassTransformer(nn.Module):
         )
         
         self.num_layers = args.num_blocks
-        self.scaling_factors =  [2, 2]
-    
-    def shortening(self, x, k):
-        """ Shift right and downsample """
-        x = torch.cat([torch.zeros_like(x[:, :1, :]), x[:, :-1, :]], dim=1)
-        return x[:, ::k, :]
-    
-    def upsampling(self, x, x_shortened, k):
-        """ Restore sequence length """
-        x_upsampled = F.interpolate(x_shortened.permute(0, 2, 1), size=x.shape[1], mode='nearest')
-        x_upsampled = x_upsampled.permute(0, 2, 1)  # Restore original shape (batch, seq_len, features)
+        self.scaling_factors = [8, 8]  # determine the downsampling and upsampling factors
+        self.linear_upsample = nn.Linear(args.hidden_units, self.scaling_factors[0] * args.hidden_units)
+
+    def attention_downsample(self, x, k):
+        """ Attention-based downsampling (Dai et al., 2020) """
         
-        # print(f'x.shape: {x.shape}, x_shortened.shape: {x_shortened.shape}, x_upsampled.shape: {x_upsampled.shape}')
         
-        return x + x_upsampled  # Now x_upsampled has the same shape as x
-    
+        # shape of x is (batch_size, seq_len, hidden_units) and k is the downsampling factor
+        shortened = F.avg_pool1d(x.permute(0, 2, 1), kernel_size=k, stride=k).permute(0, 2, 1) # shape of shortened is (batch_size, reduced_len, hidden_units),x is of shape (batch_size, seq_len, hidden_units)  , reduced_len = seq_len // k
+        attention_scores = torch.bmm(shortened, x.transpose(1, 2))  # (batch_size, reduced_len, seq_len)
+        attention_weights = F.softmax(attention_scores, dim=-1) # shape of attention_weights is (batch_size, reduced_len, seq_len)
+        downsampled = torch.bmm(attention_weights, x) # (batch_size, reduced_len, hidden_units)
+        return shortened + downsampled  # Residual connection
+
+    def attention_upsample(self, x_shortened, x_original, k):
+        """ Attention-based upsampling (Subramanian et al., 2020) """
+        upsampled = self.linear_upsample(x_shortened)  # Linear upsampling
+        upsampled = upsampled.view(x_shortened.shape[0], -1, x_original.shape[-1])  # Reshape to match original length
+        
+        attention_scores = torch.bmm(upsampled, x_original.transpose(1, 2))  # (batch_size, seq_len, seq_len)
+        attention_weights = F.softmax(attention_scores, dim=-1)
+        upsampled_attention = torch.bmm(attention_weights, x_original)
+        return upsampled + upsampled_attention  # Residual connection
+
     def hourglass(self, x, scaling_factors):
+        """ Recursive attention-based downsampling and upsampling . This function is called recursively to apply the attention-based downsampling and upsampling. """
         
-        # print(x.shape)
         x = self.encoder(x)
         
         if not scaling_factors:
             return self.decoder(x, x)
         
         k = scaling_factors[0]
-        x_shortened = self.shortening(x, k)
+        x_shortened = self.attention_downsample(x, k)
         x_processed = self.hourglass(x_shortened, scaling_factors[1:])
-        x = self.upsampling(x, x_processed, k)
+        x_upsampled = self.attention_upsample(x_processed, x, k)
         
-        return self.decoder(x, x)
-    
+        return self.decoder(x_upsampled, x)
+
     def log2feats(self, log_seqs):
+        
+        """ This function is used to convert the log sequence into features using the hourglass transformer"""
         seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.device))
         seqs += self.pos_emb(torch.arange(seqs.shape[1]).to(self.device))
         seqs = self.emb_dropout(seqs)
@@ -1069,7 +1252,7 @@ class HourglassTransformer(nn.Module):
         return self.hourglass(seqs, self.scaling_factors)
 
     def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
-        log_feats = self.log2feats(log_seqs)
+        log_feats = self.log2feats(log_seqs)  # Convert log sequence to features shape of log_feats is (batch_size, seq_len, hidden_units)
         pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.device))
         neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.device))
         
@@ -1083,6 +1266,6 @@ class HourglassTransformer(nn.Module):
         final_feat = log_feats[:, -1, :]
         
         item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.device))
-        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)  # shape of logits is (batch_size, item_num) , item_num is the number of items 
         
         return logits
