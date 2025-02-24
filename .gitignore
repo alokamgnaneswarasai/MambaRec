@@ -12,6 +12,9 @@ wandb/
 #ignore nohup.out file
 nohup.out
 
+del.ipynb
+dummy.ipynb
+helper.ipynb
 # ignore all the files starting with slurm-%j.out
 slurm-*.out
 

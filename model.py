@@ -1269,3 +1269,208 @@ class HourglassTransformer(nn.Module):
         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)  # shape of logits is (batch_size, item_num) , item_num is the number of items 
         
         return logits
+
+
+
+
+import torch
+import torch.nn as nn
+import numpy as np
+
+class TransformerXLRec(nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(TransformerXLRec, self).__init__()
+        
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.mem_len = 25
+        
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units) 
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+        
+        self.layers = nn.ModuleList()
+        for _ in range(args.num_blocks):
+            self.layers.append(RelativeMultiheadTransformerXL(args.hidden_units, args.num_heads, args.dropout_rate))
+        
+        self.last_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-8)
+        
+    def log2feats(self, log_seqs, mems=None):
+        seqs = self.item_emb(torch.tensor(log_seqs, dtype=torch.long, device=self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        
+        positions = torch.arange(log_seqs.shape[1], device=self.dev).expand(log_seqs.shape[0], -1)
+        seqs += self.pos_emb(positions)
+        seqs = self.emb_dropout(seqs)
+        
+        log_seqs = torch.tensor(log_seqs, dtype=torch.long, device=self.dev)  # Convert to tensor
+        timeline_mask = (log_seqs == 0)
+
+        seqs *= ~timeline_mask.unsqueeze(-1)
+        
+        if mems is None:
+            mems = [None] * len(self.layers)
+        
+        for i, layer in enumerate(self.layers):
+            seqs, mems[i] = layer(seqs, mems[i])
+            seqs *= ~timeline_mask.unsqueeze(-1)
+        
+        log_feats = self.last_layernorm(seqs)
+        return log_feats, mems
+    
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs, mems=None):        
+        log_feats, mems = self.log2feats(log_seqs, mems)
+        
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+        
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+        
+        return pos_logits, neg_logits
+    
+    def predict(self, user_ids, log_seqs, item_indices, mems=None):
+        log_feats, mems = self.log2feats(log_seqs, mems)
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits
+
+class RelativeMultiheadTransformerXL(nn.Module):
+    def __init__(self, hidden_units, num_heads, dropout_rate):
+        super().__init__()
+        self.attn = nn.MultiheadAttention(hidden_units, num_heads, dropout_rate)
+        self.layernorm = nn.LayerNorm(hidden_units, eps=1e-8)
+        self.ffn = nn.Sequential(
+            nn.Linear(hidden_units, hidden_units * 4),
+            nn.ReLU(),
+            nn.Linear(hidden_units * 4, hidden_units),
+            nn.Dropout(dropout_rate)
+        )
+    
+    def forward(self, x, mem):
+        if mem is not None:
+            x = torch.cat([mem, x], dim=0)
+        attn_output, _ = self.attn(x, x, x)
+        x = self.layernorm(x + attn_output)
+        ffn_output = self.ffn(x)
+        x = self.layernorm(x + ffn_output)
+        return x, x[-1].detach()
+
+
+
+class CompressiveTransformerRec(nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(CompressiveTransformerRec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.mem_len = 25  # Short-Term Memory (STM) length
+        self.comp_len = 10  # Long-Term Memory (LTM) length
+        self.compress_ratio = 2  # Compression rate (every 2 STM states → 1 LTM state)
+
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+
+        self.layers = nn.ModuleList()
+        for _ in range(args.num_blocks):
+            self.layers.append(CompressiveTransformerBlock(args.hidden_units, args.num_heads, args.dropout_rate))
+
+        self.last_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-8)
+
+    def compress_memory(self, old_mems):
+        seq_len, hidden_dim = old_mems.shape[-2], old_mems.shape[-1]
+        
+        # Ensure divisibility
+        truncate_len = (seq_len // self.compress_ratio) * self.compress_ratio
+        truncated_mems = old_mems[:truncate_len]
+
+        # Reshape and apply mean pooling
+        return truncated_mems.view(-1, self.compress_ratio, hidden_dim).mean(dim=1)
+
+
+    def log2feats(self, log_seqs, stm=None, ltm=None):
+        """ Computes item sequence features with compressive memory. """
+        seqs = self.item_emb(torch.tensor(log_seqs, dtype=torch.long, device=self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+
+        positions = torch.arange(log_seqs.shape[1], device=self.dev).expand(log_seqs.shape[0], -1)
+        seqs += self.pos_emb(positions)
+        seqs = self.emb_dropout(seqs)
+
+        log_seqs = torch.tensor(log_seqs, dtype=torch.long, device=self.dev)
+        timeline_mask = (log_seqs == 0)
+        seqs *= ~timeline_mask.unsqueeze(-1)
+
+        if stm is None:
+            stm = [None] * len(self.layers)
+        if ltm is None:
+            ltm = [None] * len(self.layers)
+
+        for i, layer in enumerate(self.layers):
+            seqs, new_stm = layer(seqs, stm[i], ltm[i])
+
+            # Memory Update:
+            # 1. Shift STM and truncate
+            if new_stm is not None and new_stm.size(0) > self.mem_len:
+                old_mems, new_stm = new_stm[:-self.mem_len], new_stm[-self.mem_len:]
+                
+                # 2. Compress and move to LTM
+                new_ltm = self.compress_memory(old_mems)
+            else:
+                new_ltm = ltm[i]
+
+            stm[i], ltm[i] = new_stm, new_ltm
+            seqs *= ~timeline_mask.unsqueeze(-1)
+
+        log_feats = self.last_layernorm(seqs)
+        return log_feats, stm, ltm
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs, stm=None, ltm=None):
+        log_feats, stm, ltm = self.log2feats(log_seqs, stm, ltm)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices, stm=None, ltm=None):
+        log_feats, stm, ltm = self.log2feats(log_seqs, stm, ltm)
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits
+
+
+class CompressiveTransformerBlock(nn.Module):
+    def __init__(self, hidden_units, num_heads, dropout_rate):
+        super().__init__()
+        self.attn = nn.MultiheadAttention(hidden_units, num_heads, dropout_rate)
+        self.layernorm = nn.LayerNorm(hidden_units, eps=1e-8)
+        self.ffn = nn.Sequential(
+            nn.Linear(hidden_units, hidden_units * 4),
+            nn.ReLU(),
+            nn.Linear(hidden_units * 4, hidden_units),
+            nn.Dropout(dropout_rate)
+        )
+
+    def forward(self, x, stm, ltm):
+        """ Forward pass with short-term and long-term memory. """
+        if stm is not None:
+            x = torch.cat([stm, x], dim=0)  # Append STM to input
+
+        if ltm is not None:
+            x = torch.cat([ltm, x], dim=0)  # Append LTM to input
+
+        attn_output, _ = self.attn(x, x, x)
+        x = self.layernorm(x + attn_output)
+        ffn_output = self.ffn(x)
+        x = self.layernorm(x + ffn_output)
+
+        return x, x[-1].detach()  # Return new STM state

@@ -7,7 +7,7 @@
 pwd; hostname; date  # Print the current working directory, hostname, and current date and time
 
 # Run the following command
-./run_exp.sh --dataset=KuaiRand2000  --train_dir=tracks256_default/ --maxlen=2048  --batch_size=16 --backbone=hourglass --hidden_units=32 --eval_neg_sample=100  --device=cuda:7 --num_epochs=500
+./run_exp.sh --dataset=ml-1m --train_dir=tracks256_default/ --maxlen=200  --batch_size=16 --backbone=compressive --hidden_units=32 --eval_neg_sample=100  --device=cuda:7 --num_epochs=500
 
 # if you have python script, you can run it as follows
 # python3 myscript.py
