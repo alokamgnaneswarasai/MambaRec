@@ -152,6 +152,8 @@ if __name__ == '__main__':
             u, seq, pos, neg = sampler.next_batch()  # tuples to ndarray
             u, seq, pos, neg = np.array(u), np.array(seq), np.array(pos), np.array(neg)
             t0 = time.time()
+            stm = None
+            ltm = None
             pos_logits, neg_logits = model(u, seq, pos, neg)
             t1 = time.time()
             T += (t1 - t0) * 1000
