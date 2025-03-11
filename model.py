@@ -1474,3 +1474,146 @@ class CompressiveTransformerBlock(nn.Module):
         x = self.layernorm(x + ffn_output)
 
         return x, x[-1].detach()  # Return new STM state
+
+
+
+
+import torch
+from torch import nn
+
+from labml.logger import inspect
+from labml_nn.transformers.mha import MultiHeadAttention
+
+
+from typing import List, Optional
+def shift_right(x: torch.Tensor):
+    """
+    This method shifts $i^{th}$ row of a matrix by $i$ columns.
+
+    If the input is `[[1, 2 ,3], [4, 5 ,6], [7, 8, 9]]`, the shifted
+    result would be `[[1, 2 ,3], [0, 4, 5], [6, 0, 7]]`.
+    *Ideally we should mask out the lower triangle but it's ok for our purpose*.
+    """
+
+    # Concatenate a column of zeros
+    zero_pad = x.new_zeros(x.shape[0], 1, *x.shape[2:])
+    x_padded = torch.cat([x, zero_pad], dim=1)
+
+    # Reshape and remove excess elements from the end
+    x_padded = x_padded.view(x.shape[1] + 1, x.shape[0], *x.shape[2:])
+    x = x_padded[:-1].view_as(x)
+
+    #
+    return x
+
+
+class RelativeMultiHeadAttention(MultiHeadAttention):
+   
+
+    def __init__(self, heads: int, d_model: int, dropout_prob: float = 0.1):
+        # The linear transformations do not need a bias since we
+        # explicitly include it when calculating scores.
+        # However having a bias for `value` might make sense.
+        # print(heads, d_model, dropout_prob)
+        super().__init__(heads, d_model, dropout_prob, bias=False)
+        
+        # Number of relative positions
+        self.P = 2 ** 12
+
+        # Relative positional embeddings for key relative to the query.
+        # We need $2P$ embeddings because the keys can be before or after the query.
+        self.key_pos_embeddings = nn.Parameter(torch.zeros((self.P * 2, heads, self.d_k)), requires_grad=True)
+        # Relative positional embedding bias for key relative to the query.
+        self.key_pos_bias = nn.Parameter(torch.zeros((self.P * 2, heads)), requires_grad=True)
+        # Positional embeddings for the query is independent of the position of the query
+        self.query_pos_bias = nn.Parameter(torch.zeros((heads, self.d_k)), requires_grad=True)
+
+    def get_scores(self, query: torch.Tensor, key: torch.Tensor):
+        
+
+        # $\textcolor{orange}{R_k}$
+        key_pos_emb = self.key_pos_embeddings[self.P - key.shape[0]:self.P + query.shape[0]]
+        # $\textcolor{orange}{S_k}$
+        key_pos_bias = self.key_pos_bias[self.P - key.shape[0]:self.P + query.shape[0]]
+        # $\textcolor{orange}{v^\top}$
+        query_pos_bias = self.query_pos_bias[None, None, :, :]
+
+        # ${(\textcolor{lightgreen}{\mathbf{A + C}})}_{i,j} =
+        # Q_i^\top K_j +
+        # \textcolor{orange}{v^\top} K_j$
+        ac = torch.einsum('ibhd,jbhd->ijbh', query + query_pos_bias, key)
+        # $\textcolor{lightgreen}{\mathbf{B'}_{i,k}} = Q_i^\top \textcolor{orange}{R_k}$
+        b = torch.einsum('ibhd,jhd->ijbh', query, key_pos_emb)
+        # $\textcolor{lightgreen}{\mathbf{D'}_{i,k}} = \textcolor{orange}{S_k}$
+        d = key_pos_bias[None, :, None, :]
+        # Shift the rows of $\textcolor{lightgreen}{\mathbf{(B' + D')}_{i,k}}$
+        # to get $$\textcolor{lightgreen}{\mathbf{(B + D)}_{i,j} = \mathbf{(B' + D')}_{i,i - j}}$$
+        bd = shift_right(b + d)
+        # Remove extra positions
+        bd = bd[:, -key.shape[0]:]
+
+      
+        return ac + bd
+
+class TransformerXLLayer(nn.Module):
+    def __init__(self, d_model: int, self_attn: RelativeMultiHeadAttention, dropout_prob: float):
+        super().__init__()
+        self.size = d_model
+        self.self_attn = self_attn
+        self.linear = nn.Linear(d_model, d_model)
+        self.dropout = nn.Dropout(dropout_prob)
+        self.norm_self_attn = nn.LayerNorm(d_model)
+        self.norm_linear = nn.LayerNorm(d_model)
+
+    def forward(self, x: torch.Tensor, mem: Optional[torch.Tensor], mask: torch.Tensor):
+        z = self.norm_self_attn(x)
+        if mem is not None:
+            mem = self.norm_self_attn(mem)
+            
+            m_z = torch.cat((mem, z), dim=0)
+        else:
+            m_z = z
+        self_attn = self.self_attn(query=z, key=m_z, value=m_z, mask=mask)
+        x = x + self.dropout(self_attn)
+        z = self.norm_linear(x)
+        linear_out = self.linear(z)
+        x = x + self.dropout(linear_out)
+        return x
+
+class TransformerXL(nn.Module):
+    def __init__(self, layer: TransformerXLLayer, n_layers: int):
+        super().__init__()
+        self.layers = nn.ModuleList([layer for _ in range(n_layers)])
+        self.norm = nn.LayerNorm(layer.size)
+
+    def forward(self, x: torch.Tensor, mem: List[torch.Tensor], mask: torch.Tensor):
+        new_mem = []
+        for i, layer in enumerate(self.layers):
+            new_mem.append(x.detach())
+            m = mem[i] if mem else None
+            x = layer(x=x, mem=m, mask=mask)
+        return self.norm(x), new_mem
+
+class TransformerXLEncoder(nn.Module):
+    def __init__(self, num_items, embed_dim, num_layers, num_heads, hidden_dim, mem_length, dropout=0.1):
+        super().__init__()
+        self.embedding = nn.Embedding(num_items, embed_dim)
+        self.mem_length = mem_length
+        # print(embed_dim)
+        self.transformer = TransformerXL(
+            TransformerXLLayer(
+                d_model=embed_dim,
+                self_attn=RelativeMultiHeadAttention(num_heads,embed_dim, dropout),
+                dropout_prob=dropout
+            ),
+            n_layers=num_layers
+        )
+        self.linear = nn.Linear(embed_dim, num_items)
+    
+    def forward(self, x, memory=None):
+        x = self.embedding(x)  # Shape: (B, S, D)
+        x = x.permute(1, 0, 2)  # Shape: (S, B, D)
+        mask = None  # Define mask if needed
+        output, new_memory = self.transformer(x, memory, mask)
+        logits = self.linear(output)  # Shape: (S, B, num_items)
+        return logits.permute(1, 2, 0), new_memory  # Shape: (B, num_items, S)

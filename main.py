@@ -161,7 +161,7 @@ if __name__ == '__main__':
                                                                                                    device=args.device)
            
             adam_optimizer.zero_grad()
-            indices = np.where(pos != 0)
+            indices = np.where(pos != 0) 
             loss = bce_criterion(pos_logits[indices], pos_labels[indices])
             loss += bce_criterion(neg_logits[indices], neg_labels[indices])
             for param in model.item_emb.parameters(): loss += args.l2_emb * torch.norm(param)
