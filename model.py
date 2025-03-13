@@ -1595,9 +1595,15 @@ class TransformerXL(nn.Module):
         return self.norm(x), new_mem
 
 class TransformerXLEncoder(nn.Module):
-    def __init__(self, num_items, embed_dim, num_layers, num_heads, hidden_dim, mem_length, dropout=0.1):
+    def __init__(self, user_num,item_num,args,mem_length=200, dropout=0.1,num_layers=4):
         super().__init__()
-        self.embedding = nn.Embedding(num_items, embed_dim)
+        self.user_num = user_num
+        num_items = item_num
+        self.device = args.device
+        self.num_items = num_items
+        embed_dim = args.hidden_units
+        num_heads = args.num_heads
+        self.item_emb = nn.Embedding(num_items+1, embed_dim)
         self.mem_length = mem_length
         # print(embed_dim)
         self.transformer = TransformerXL(
@@ -1610,10 +1616,30 @@ class TransformerXLEncoder(nn.Module):
         )
         self.linear = nn.Linear(embed_dim, num_items)
     
-    def forward(self, x, memory=None):
-        x = self.embedding(x)  # Shape: (B, S, D)
+    def forward(self, user_ids,log_seqs,pos_seqs,neg_seqs,memory=None):
+        x = self.item_emb(torch.tensor(log_seqs).to(self.device))  # Shape: (B, S, D)
         x = x.permute(1, 0, 2)  # Shape: (S, B, D)
         mask = None  # Define mask if needed
         output, new_memory = self.transformer(x, memory, mask)
-        logits = self.linear(output)  # Shape: (S, B, num_items)
-        return logits.permute(1, 2, 0), new_memory  # Shape: (B, num_items, S)
+        # logits = self.linear(output)  # Shape: (S, B, num_items)
+        # return logits.permute(1, 2, 0), new_memory  # Shape: (B, num_items, S)
+        log_feats = output.permute(1, 0, 2)
+        
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.device))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.device))
+        # print(log_feats.shape,pos_embs.shape,neg_embs.shape)
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+        return pos_logits, neg_logits, new_memory
+        # return output.permute(1, 0, 2), new_memory  # Shape: (B,S,D)
+        
+    def predict(self,user_ids,log_seqs, item_indices,memory=None):
+        x = self.item_emb(torch.tensor(log_seqs).to(self.device))
+        x = x.permute(1, 0, 2)
+        mask = None
+        output, _ = self.transformer(x, memory, mask)
+        log_feats = output
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.device))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits

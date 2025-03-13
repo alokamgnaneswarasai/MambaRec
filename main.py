@@ -4,7 +4,7 @@ import torch
 import argparse
 import wandb
 import warnings
-from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec,HourglassTransformer,TransformerXLRec,CompressiveTransformerRec
+from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec,HourglassTransformer,TransformerXLRec,CompressiveTransformerRec,TransformerXLEncoder
 from utils import *
 from tqdm import tqdm
 
@@ -115,7 +115,7 @@ if __name__ == '__main__':
         model = HourglassTransformer(usernum,itemnum,args).to(args.device)
         
     elif args.backbone =='transformerxl':
-        model = TransformerXLRec(usernum,itemnum,args).to(args.device)
+        model = TransformerXLEncoder(usernum,itemnum,args).to(args.device)
         
     elif args.backbone =='compressive':
         model = CompressiveTransformerRec(usernum,itemnum,args).to(args.device)
@@ -145,16 +145,15 @@ if __name__ == '__main__':
     inference_time = 0.0
     best_HR_10_val = 0
     best_epoch = 0
-
+    mem = None
     for epoch in range(epoch_start_idx, args.num_epochs + 1):
         if args.inference_only: break  # just to decrease identition
         for step in (range(num_batch)) :  # tqdm(range(num_batch), total=num_batch, ncols=70, leave=False, unit='b'):
             u, seq, pos, neg = sampler.next_batch()  # tuples to ndarray
             u, seq, pos, neg = np.array(u), np.array(seq), np.array(pos), np.array(neg)
             t0 = time.time()
-            stm = None
-            ltm = None
-            pos_logits, neg_logits = model(u, seq, pos, neg)
+            
+            pos_logits, neg_logits,mem = model(u, seq, pos, neg,mem)
             t1 = time.time()
             T += (t1 - t0) * 1000
             pos_labels, neg_labels = torch.ones(pos_logits.shape, device=args.device), torch.zeros(neg_logits.shape,
