@@ -1643,3 +1643,73 @@ class TransformerXLEncoder(nn.Module):
         item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.device))
         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
         return logits
+    
+    
+    
+ # Ensure the correct import of Mamba module
+
+class BiMambaRec(nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(BiMambaRec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+        
+        self.mamba_forward = Mamba(
+            d_model=args.hidden_units,
+            d_state=32,
+            d_conv=4,
+            expand=2,
+        ).to(self.dev)
+        
+        self.mamba_backward = Mamba(
+            d_model=args.hidden_units,
+            d_state=32,
+            d_conv=4,
+            expand=2,
+        ).to(self.dev)
+        
+        self.forward_weight = nn.Parameter(torch.tensor(0.5))
+        self.backward_weight = nn.Parameter(torch.tensor(0.5))
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+        
+        forward_feats = self.mamba_forward(seqs)
+        backward_feats = self.mamba_backward(torch.flip(seqs, dims=[1]))
+        
+        # concat = torch.cat([forward_feats, backward_feats], dim=-1)
+        
+        # log_feats = torch.cat([forward_feats, backward_feats], dim=-1)  # Concatenate forward and backward features
+        # log_feats = (forward_feats + backward_feats)/2  # Add forward and backward features
+        log_feats = self.forward_weight * forward_feats + self.backward_weight * backward_feats  # Weighted sum of forward and backward features
+        return log_feats
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices): 
+        log_feats = self.log2feats(log_seqs)
+        final_feat = log_feats[:, -1, :]
+
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+
+        return logits
