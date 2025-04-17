@@ -4,9 +4,11 @@ import torch
 import argparse
 import wandb
 import warnings
-from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec,HourglassTransformer,TransformerXLRec,CompressiveTransformerRec,TransformerXLEncoder,BiMambaRec
+from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec,HourglassTransformer,TransformerXLRec,CompressiveTransformerRec,TransformerXLEncoder,BiMambaRec,QuantizedMambaRec
 from utils import *
 from tqdm import tqdm
+from slender_mamba.ops.Bitembedding import replace_embeddings_in_pytorch_model
+from slender_mamba.ops.Bitembedding import replace_linears_in_pytorch_model
 
 warnings.filterwarnings('ignore')
 
@@ -84,8 +86,12 @@ if __name__ == '__main__':
 
     sampler = WarpSampler(user_train, usernum, itemnum, batch_size=args.batch_size, maxlen=args.maxlen, n_workers=3)
     if args.backbone == 'mamba':
-        model = MambaRec(usernum, itemnum, args).to(
-            args.device)  # no ReLU activation in original SASRec implementation?
+        model = MambaRec(usernum, itemnum, args).to(args.device)  # no ReLU activation in original SASRec implementation?
+       
+    elif args.backbone == 'qmamba':
+        model = QuantizedMambaRec(usernum, itemnum, args).to(args.device)  # no ReLU activation in original SASRec implementation?
+        replace_linears_in_pytorch_model(model)
+        replace_embeddings_in_pytorch_model(model)
         
         
     elif args.backbone == 'sas':

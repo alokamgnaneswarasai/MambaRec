@@ -1713,3 +1713,81 @@ class BiMambaRec(nn.Module):
         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
 
         return logits
+    
+    
+from slender_mamba.ops.Bitembedding import BitEmbedding158b
+from slender_mamba.ops.Bitembedding import FusedBitLinear    
+class QuantizedMambaRec(nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(QuantizedMambaRec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        print("Quantized Mamba Rec device: ", self.dev)
+        # Replace nn.Embedding with quantized embedding
+        self.item_emb = BitEmbedding158b(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = BitEmbedding158b(args.maxlen, args.hidden_units)
+
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+
+        # Replace nn.Linear layers in Mamba with quantized linear layers
+        self.mamba1 = Mamba(
+            d_model=args.hidden_units,
+            d_state=32,
+            d_conv=4,
+            expand=2,
+        ).to(self.dev)
+
+        # Replace feedforward layers with quantized layers
+        self.feedforward = FusedBitLinear(args.hidden_units, args.hidden_units)
+
+    # def log2feats(self, log_seqs):
+    #     seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+    #     seqs *= self.item_emb.embedding_dim ** 0.5
+    #     positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+    #     seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+    #     seqs = self.emb_dropout(seqs)
+
+    #     # Process through Mamba block
+    #     seqs = self.mamba1(seqs)
+
+    #     # Process through quantized feedforward layer
+    #     seqs = self.feedforward(seqs)
+
+    #     return seqs
+    
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs = seqs.clone()  # Clone the output to avoid in-place modification issues
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+        # print(f"seqs device: {seqs.device}")
+        # print(f"seqs shape: {seqs.shape}")
+        seqs = seqs.to(self.mamba1.conv1d.weight.device)
+        # print(f"seqs after mamba1 device: {seqs.device}")
+        seqs = self.feedforward(seqs)
+        return seqs
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs)
+
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+
+        return logits
