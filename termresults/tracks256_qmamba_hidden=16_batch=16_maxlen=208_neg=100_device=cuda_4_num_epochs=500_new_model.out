@@ -603,3 +603,15 @@ log2 feats is getting called
 Mamba is getting called
 log2 feats is done
 loss is going to run
+backward runs for 38.70920395851135 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.09983682632446 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run

@@ -86,4 +86,8 @@ loss in epoch 47 iteration 194: 0.44923266768455505
 loss in epoch 48 iteration 194: 0.4297489523887634
 loss in epoch 49 iteration 194: 0.42747509479522705
 loss in epoch 50 iteration 194: 0.42006540298461914
-Evaluating
+Evaluatingepoch:50, time: 235312.129498(s), valid (NDCG@5: 0.3111, HR@5: 0.4246, NDCG@10: 0.3411, HR@10: 0.5169, NDCG@20: 0.3608, HR@20: 0.5946), test (NDCG@5: 0.3014, HR@5: 0.4109, NDCG@10: 0.3303, HR@10: 0.4995, NDCG@20: 0.3503, HR@20: 0.5782)
+loss in epoch 51 iteration 194: 0.41946929693222046
+loss in epoch 52 iteration 194: 0.4093172550201416
+loss in epoch 53 iteration 194: 0.42634743452072144
+loss in epoch 54 iteration 194: 0.4044734835624695
