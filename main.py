@@ -4,7 +4,7 @@ import torch
 import argparse
 import wandb
 import warnings
-from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec,HourglassTransformer,TransformerXLRec,CompressiveTransformerRec,TransformerXLEncoder,BiMambaRec,QuantizedMambaRec
+from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec,HourglassTransformer,TransformerXLRec,CompressiveTransformerRec,TransformerXLEncoder,BiMambaRec,QuantizedMambaRec,Mamba2Rec
 from utils import *
 from tqdm import tqdm
 from slender_mamba.ops.Bitembedding import replace_embeddings_in_pytorch_model
@@ -95,6 +95,9 @@ if __name__ == '__main__':
         replace_linears_in_pytorch_model(model)
         # print("Replacing embeddings")
         # replace_embeddings_in_pytorch_model(model)
+        
+    elif args.backbone == 'mamba2':
+        model = Mamba2Rec(usernum, itemnum, args).to(args.device)
         
         
     elif args.backbone == 'sas':
