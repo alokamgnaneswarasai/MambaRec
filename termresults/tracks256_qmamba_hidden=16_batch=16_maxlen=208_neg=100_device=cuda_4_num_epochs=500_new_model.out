@@ -1,0 +1,592 @@
+Arguments:
+backbone qmamba
+batch_size 16
+dataset tracks256
+device cuda:4
+dropout_rate 0.5
+eval_neg_sample 100
+hidden_units 16
+inference_only False
+l2_emb 0.0
+lr 0.0005
+maxlen 208
+name mamba
+num_blocks 2
+num_epochs 500
+num_heads 1
+state_dict_path None
+train_dir tracks256_default/
+
+user_count: 25001
+item count: 2225190
+25001
+average sequence length: 248.89
+Quantized Mamba Rec device:  cuda:4
+Replacing linears
+Replacing embeddings
+parameters_count: 515761329
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.36342191696167 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.06616806983948 seconds
+Current Memory Allocated: 16.39 MB
+Current Memory Cached: 4440.00 MB
+Peak Memory Cached: 4440.00 MB
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 35.6734082698822 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.062631607055664 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 35.69972276687622 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 35.731053829193115 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 35.53338694572449 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.00466513633728 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 35.65505576133728 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 35.90859079360962 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 35.97897958755493 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.114262342453 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.21308207511902 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.658178091049194 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.511802196502686 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.041887283325195 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.98252606391907 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.28019595146179 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.10403513908386 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 36.88156175613403 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.13033986091614 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.81565189361572 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.33470964431763 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.48137807846069 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.21485471725464 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.15047216415405 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.36504507064819 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.77640628814697 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.04144024848938 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.30563306808472 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.16406750679016 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.51259756088257 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.179702281951904 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.418761253356934 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.06865835189819 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.98963499069214 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.75287127494812 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.14740753173828 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.85619258880615 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.383336782455444 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.641632080078125 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.85180950164795 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 39.002899408340454 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.50385785102844 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.848716735839844 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.82350707054138 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.491782426834106 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.98289227485657 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.76275825500488 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.06556510925293 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.351704359054565 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.46633505821228 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.480005741119385 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.15566349029541 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.74875593185425 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.9653959274292 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.10257363319397 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.61761522293091 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 39.18744921684265 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.66831159591675 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.52455234527588 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.17801833152771 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.64546751976013 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.59640145301819 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.60677433013916 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 39.33691167831421 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.96299862861633 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.55516052246094 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.6383318901062 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.66046857833862 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.17825984954834 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.241804361343384 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.35315799713135 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.384809494018555 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.759546756744385 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.919400691986084 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.38215613365173 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.52991962432861 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.08687376976013 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.22689604759216 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 39.749881744384766 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.613115310668945 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.679742097854614 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.25557279586792 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.06335711479187 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.937981605529785 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.25211048126221 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.3622510433197 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 37.87490940093994 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.84707260131836 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.36684226989746 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.631404876708984 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done
+loss is going to run
+backward runs for 38.136680126190186 seconds
+model is going to run
+log2 feats is getting called
+Mamba is getting called
+log2 feats is done

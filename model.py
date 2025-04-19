@@ -1726,8 +1726,10 @@ class QuantizedMambaRec(nn.Module):
         self.dev = args.device
         print("Quantized Mamba Rec device: ", self.dev)
         # Replace nn.Embedding with quantized embedding
-        self.item_emb = BitEmbedding158b(self.item_num + 1, args.hidden_units, padding_idx=0)
-        self.pos_emb = BitEmbedding158b(args.maxlen, args.hidden_units)
+        # self.item_emb = BitEmbedding158b(self.item_num + 1, args.hidden_units, padding_idx=0)
+        # self.pos_emb = BitEmbedding158b(args.maxlen, args.hidden_units)
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
 
         self.emb_dropout = nn.Dropout(p=args.dropout_rate)
 
@@ -1766,14 +1768,25 @@ class QuantizedMambaRec(nn.Module):
         seqs = self.emb_dropout(seqs)
         # print(f"seqs device: {seqs.device}")
         # print(f"seqs shape: {seqs.shape}")
-        seqs = seqs.to(self.mamba1.conv1d.weight.device)
+        # seqs = seqs.to(self.mamba1.conv1d.weight.device)
+        # print("Mamba is getting called")
+        self.mamba1.in_proj = self.mamba1.in_proj.to(seqs.device)
+        self.mamba1.x_proj = self.mamba1.x_proj.to(seqs.device)
+        self.mamba1.dt_proj = self.mamba1.dt_proj.to(seqs.device)   
+        self.mamba1.out_proj = self.mamba1.out_proj.to(seqs.device)
+        seqs = self.mamba1(seqs)
+        
+        # print(seqs.device)
+        # seqs = seqs.to(self.mamba1.conv1d.weight.device)
         # print(f"seqs after mamba1 device: {seqs.device}")
-        seqs = self.feedforward(seqs)
+        # seqs = self.feedforward(seqs)
         return seqs
 
     def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        
+        # print(f"log2 feats is getting called")
         log_feats = self.log2feats(log_seqs)
-
+        # print(f"log2 feats is done")
         pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
         neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
 

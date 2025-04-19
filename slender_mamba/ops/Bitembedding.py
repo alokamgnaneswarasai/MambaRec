@@ -759,7 +759,8 @@ class LayerNormEmbeddingQuantFn(torch.autograd.Function):
         
         grad_embedding_weight = grad_embedding_weight.to(embedding_weight.device)
         # print(f"grad_embedding_weight.device after: {grad_embedding_weight.device}")
-        
+        dw = dw.to(embedding_weight.device)
+        db = db.to(embedding_weight.device) if db is not None else None
         return None, dw, db, grad_embedding_weight, None, None
 
 def layer_norm_embedding_quant_fn(

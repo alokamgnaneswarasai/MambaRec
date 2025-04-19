@@ -90,8 +90,11 @@ if __name__ == '__main__':
        
     elif args.backbone == 'qmamba':
         model = QuantizedMambaRec(usernum, itemnum, args).to(args.device)  # no ReLU activation in original SASRec implementation?
+        # model = MambaRec(usernum, itemnum, args).to(args.device)  # no ReLU activation in original SASRec implementation?
+        print("Replacing linears")
         replace_linears_in_pytorch_model(model)
-        replace_embeddings_in_pytorch_model(model)
+        # print("Replacing embeddings")
+        # replace_embeddings_in_pytorch_model(model)
         
         
     elif args.backbone == 'sas':
@@ -162,6 +165,7 @@ if __name__ == '__main__':
             t0 = time.time()
             
             # pos_logits, neg_logits,mem = model(u, seq, pos, neg)
+            # print("model is going to run")
             pos_logits, neg_logits = model(u, seq, pos, neg)
             t1 = time.time()
             T += (t1 - t0) * 1000
@@ -174,8 +178,18 @@ if __name__ == '__main__':
             loss += bce_criterion(neg_logits[indices], neg_labels[indices])
             for param in model.item_emb.parameters(): loss += args.l2_emb * torch.norm(param)
             t0 = time.time()
+            torch.cuda.reset_peak_memory_stats(args.device)
+            # print("loss is going to run")
+            t1 = time.time()
             loss.backward()
+            t2 = time.time()
+            # print(f"backward runs for {(t2 - t1)} seconds")
             
+            if epoch % 99 == 1 and step == 1:
+                print(f"Current Memory Allocated: {torch.cuda.memory_allocated(args.device) / 1024**2:.2f} MB")
+                print(f"Current Memory Cached: {torch.cuda.memory_reserved(args.device) / 1024**2:.2f} MB")
+                print(f"Peak Memory Cached: {torch.cuda.max_memory_reserved(args.device) / 1024**2:.2f} MB")
+            # print(f"Peak Memory Allocated: {torch.cuda.max_memory_allocated(args.device) / 1024**2:.2f} MB")
             
             t1 = time.time()
             T += (t1 - t0) * 1000

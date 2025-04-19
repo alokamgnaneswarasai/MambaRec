@@ -1,0 +1,50 @@
+Arguments:
+backbone qmamba
+batch_size 128
+dataset tracks256
+device cuda:6
+dropout_rate 0.5
+eval_neg_sample 100
+hidden_units 16
+inference_only False
+l2_emb 0.0
+lr 0.0005
+maxlen 208
+name mamba
+num_blocks 2
+num_epochs 500
+num_heads 1
+state_dict_path None
+train_dir tracks256_default/
+
+user_count: 25001
+item count: 2225190
+25001
+average sequence length: 248.89
+Quantized Mamba Rec device:  cuda:6
+Replacing linears
+parameters_count: 515761233
+Current Memory Allocated: 7888.79 MB
+Current Memory Cached: 9906.00 MB
+Peak Memory Cached: 9906.00 MB
+loss in epoch 1 iteration 194: 0.9578334093093872
+loss in epoch 2 iteration 194: 0.8433855175971985
+loss in epoch 3 iteration 194: 0.7546941637992859
+loss in epoch 4 iteration 194: 0.7152537107467651
+loss in epoch 5 iteration 194: 0.6847129464149475
+Evaluatingepoch:5, time: 48990.848064(s), valid (NDCG@5: 0.5675, HR@5: 0.6883, NDCG@10: 0.5854, HR@10: 0.7423, NDCG@20: 0.5934, HR@20: 0.7742), test (NDCG@5: 0.5592, HR@5: 0.6796, NDCG@10: 0.5767, HR@10: 0.7324, NDCG@20: 0.5839, HR@20: 0.7613)
+loss in epoch 6 iteration 194: 0.6553975939750671
+loss in epoch 7 iteration 194: 0.6356275081634521
+loss in epoch 8 iteration 194: 0.6194039583206177
+loss in epoch 9 iteration 194: 0.5954463481903076
+loss in epoch 10 iteration 194: 0.582839846611023
+Evaluatingepoch:10, time: 94274.702787(s), valid (NDCG@5: 0.5659, HR@5: 0.6913, NDCG@10: 0.5840, HR@10: 0.7460, NDCG@20: 0.5917, HR@20: 0.7768), test (NDCG@5: 0.5591, HR@5: 0.6824, NDCG@10: 0.5765, HR@10: 0.7350, NDCG@20: 0.5844, HR@20: 0.7663)
+loss in epoch 11 iteration 194: 0.5670261979103088
+loss in epoch 12 iteration 194: 0.5567454695701599
+loss in epoch 13 iteration 194: 0.5382885932922363
+loss in epoch 14 iteration 194: 0.5276311039924622
+loss in epoch 15 iteration 194: 0.5208562612533569
+Evaluatingepoch:15, time: 136358.636856(s), valid (NDCG@5: 0.5664, HR@5: 0.6918, NDCG@10: 0.5841, HR@10: 0.7454, NDCG@20: 0.5915, HR@20: 0.7748), test (NDCG@5: 0.5541, HR@5: 0.6817, NDCG@10: 0.5723, HR@10: 0.7365, NDCG@20: 0.5802, HR@20: 0.7680)
+loss in epoch 16 iteration 194: 0.5142371654510498
+loss in epoch 17 iteration 194: 0.4974533021450043
+loss in epoch 18 iteration 194: 0.5040633678436279
