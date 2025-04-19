@@ -18,3 +18,4 @@ helper.ipynb
 # ignore all the files starting with slurm-%j.out
 slurm-*.out
 
+termresults/

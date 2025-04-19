@@ -48,3 +48,4 @@ Evaluatingepoch:15, time: 136358.636856(s), valid (NDCG@5: 0.5664, HR@5: 0.6918,
 loss in epoch 16 iteration 194: 0.5142371654510498
 loss in epoch 17 iteration 194: 0.4974533021450043
 loss in epoch 18 iteration 194: 0.5040633678436279
+loss in epoch 19 iteration 194: 0.4876697063446045
