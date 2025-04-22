@@ -4,7 +4,7 @@ import torch
 import argparse
 import wandb
 import warnings
-from model import SASRec, MambaRec,LinRec,SASmambaRec,GatingSASmambaRec,Jamba4Rec,HierarchicalSASRec,MoEMambaRec,SAMBA4Rec,HourglassTransformer,TransformerXLRec,CompressiveTransformerRec,TransformerXLEncoder,BiMambaRec,QuantizedMambaRec,Mamba2Rec
+from model import *
 from utils import *
 from tqdm import tqdm
 from slender_mamba.ops.Bitembedding import replace_embeddings_in_pytorch_model
@@ -92,6 +92,12 @@ if __name__ == '__main__':
         model = QuantizedMambaRec(usernum, itemnum, args).to(args.device)  # no ReLU activation in original SASRec implementation?
         # model = MambaRec(usernum, itemnum, args).to(args.device)  # no ReLU activation in original SASRec implementation?
         print("Replacing linears")
+        
+        # check how many total linear layer parameters are in the model recursively
+        print(model)
+        for name, module in model.named_modules():
+            print(f"Module: {name}, Type: {type(module)}")
+        print("Total linear layer parameters: ", sum(sum(p.numel() for p in module.parameters()) for name, module in model.named_modules() if isinstance(module, torch.nn.Linear)))
         replace_linears_in_pytorch_model(model)
         # print("Replacing embeddings")
         # replace_embeddings_in_pytorch_model(model)
@@ -134,6 +140,12 @@ if __name__ == '__main__':
         
     elif args.backbone =='bimamba':
         model = BiMambaRec(usernum,itemnum,args).to(args.device)
+        
+    elif args.backbone == 'wsas':
+        model = WindowSASRec(usernum, itemnum, args).to(args.device)
+        print("Quantizing model")
+        replace_embeddings_in_pytorch_model(model)
+        replace_linears_in_pytorch_model(model)
         
     for name, param in model.named_parameters():
         try:

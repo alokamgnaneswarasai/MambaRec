@@ -490,8 +490,9 @@ class LayerNormLinearQuantFn(torch.autograd.Function):
         
         # print(f"linear_weight.device: {linear_weight.device}")
         # print("Y.device: ", y.device)
-        # if linear_bias is not None:
-        #     print(f"linear_bias.device: {linear_bias.device}")
+        if linear_bias is not None:
+            linear_bias = linear_bias.to(y.device)
+            # print(f"linear_bias.device: {linear_bias.device}")
         out = F.linear(y.to(linear_weight.dtype), linear_weight, linear_bias)
         # We don't store y, will be recomputed in the backward pass to save memory
         ctx.save_for_backward(residual_out, norm_weight, norm_bias, linear_weight, mean, rstd)
@@ -536,11 +537,11 @@ class LayerNormLinearQuantFn(torch.autograd.Function):
         dnorm_weight = dnorm_weight.to('cpu')
         
         if dlinear_bias is not None:
-            dlinear_bias = dlinear_bias.to(linear_weight.device)
+            dlinear_bias = dlinear_bias.to('cpu')
             
         
         if dnorm_bias is not None:
-            dnorm_bias = dnorm_bias.to(norm_bias.device)
+            dnorm_bias = dnorm_bias.to('cpu')
         
         # print("dnorm_weight.device: ", dnorm_weight.device, " dlinear_weight.device: ", dlinear_weight.device)
         return (

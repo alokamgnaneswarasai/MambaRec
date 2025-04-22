@@ -1742,7 +1742,16 @@ class QuantizedMambaRec(nn.Module):
         ).to(self.dev)
 
         # Replace feedforward layers with quantized layers
-        self.feedforward = FusedBitLinear(args.hidden_units, args.hidden_units)
+        self.fc1 = nn.Linear(args.hidden_units, args.hidden_units).to(self.dev)
+        
+        self.mamba2 = Mamba(
+            d_model=args.hidden_units,
+            d_state=32,
+            d_conv=4,
+            expand=2,
+        ).to(self.dev)
+        
+        self.fc2 = nn.Linear(args.hidden_units, args.hidden_units).to(self.dev)
 
     # def log2feats(self, log_seqs):
     #     seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
@@ -1775,11 +1784,14 @@ class QuantizedMambaRec(nn.Module):
         self.mamba1.dt_proj = self.mamba1.dt_proj.to(seqs.device)   
         self.mamba1.out_proj = self.mamba1.out_proj.to(seqs.device)
         seqs = self.mamba1(seqs)
+        seqs = self.fc1(seqs)
+        self.mamba2.in_proj = self.mamba2.in_proj.to(seqs.device)
+        self.mamba2.x_proj = self.mamba2.x_proj.to(seqs.device)
+        self.mamba2.dt_proj = self.mamba2.dt_proj.to(seqs.device)   
+        self.mamba2.out_proj = self.mamba2.out_proj.to(seqs.device)
+        seqs = self.mamba2(seqs)
+        seqs = self.fc2(seqs)
         
-        # print(seqs.device)
-        # seqs = seqs.to(self.mamba1.conv1d.weight.device)
-        # print(f"seqs after mamba1 device: {seqs.device}")
-        # seqs = self.feedforward(seqs)
         return seqs
 
     def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
@@ -1885,3 +1897,90 @@ class Mamba2Rec(torch.nn.Module):
 
         return logits # preds # (U, I)
 
+class WindowSASRec(torch.nn.Module):
+    def __init__(self, user_num, item_num, args, window_size=10):
+        super(WindowSASRec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.window_size = window_size
+
+        # Embedding layers
+        self.item_emb = torch.nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
+
+        # Attention and feedforward layers
+        self.attention_layernorms = torch.nn.ModuleList()
+        self.attention_layers = torch.nn.ModuleList()
+        self.forward_layernorms = torch.nn.ModuleList()
+        self.forward_layers = torch.nn.ModuleList()
+        self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
+
+        for _ in range(args.num_blocks):
+            new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.attention_layernorms.append(new_attn_layernorm)
+
+            new_attn_layer = torch.nn.MultiheadAttention(args.hidden_units, args.num_heads, args.dropout_rate).to(self.dev)
+            self.attention_layers.append(new_attn_layer)
+
+            new_fwd_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.forward_layernorms.append(new_fwd_layernorm)
+
+            new_fwd_layer = PointWiseFeedForward(args.hidden_units, args.dropout_rate).to(self.dev)
+            self.forward_layers.append(new_fwd_layer)
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs = seqs.clone()  # Clone the output to avoid in-place modification issues
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        seqs += self.pos_emb(torch.LongTensor(positions).to(self.dev))
+        seqs = self.emb_dropout(seqs)
+
+        timeline_mask = torch.BoolTensor(log_seqs == 0).to(self.dev)
+        seqs = seqs * ~timeline_mask.unsqueeze(-1)  # Mask padding tokens
+
+        tl = seqs.shape[1]  # Sequence length
+        attention_mask = torch.ones((tl, tl), dtype=torch.bool, device=self.dev)
+        for i in range(tl):
+            # Allow only the previous `window_size` tokens
+            attention_mask[i, max(0, i - self.window_size):i + 1] = False
+
+        for i in range(len(self.attention_layers)):
+            seqs = torch.transpose(seqs, 0, 1)  # (T, B, C)
+            Q = self.attention_layernorms[i](seqs)
+            print(f"Q.device: {Q.device}")
+            print(f"seqs.device: {seqs.device}")
+            print(f"attention_mask.device: {attention_mask.device}")
+            mha_outputs, _ = self.attention_layers[i](Q, seqs, seqs, attn_mask=attention_mask)
+            seqs = Q + mha_outputs
+            seqs = torch.transpose(seqs, 0, 1)  # (B, T, C)
+
+            seqs = self.forward_layernorms[i](seqs)
+            seqs = self.forward_layers[i](seqs)
+            seqs *= ~timeline_mask.unsqueeze(-1)
+
+        log_feats = self.last_layernorm(seqs)  # (B, T, C)
+        return log_feats
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):  # For training
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):  # For inference
+        log_feats = self.log2feats(log_seqs)
+
+        final_feat = log_feats[:, -1, :]  # Use the last token's representation
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits
