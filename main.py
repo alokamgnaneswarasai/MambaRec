@@ -144,9 +144,16 @@ if __name__ == '__main__':
     elif args.backbone == 'wsas':
         model = WindowSASRec(usernum, itemnum, args).to(args.device)
         print("Quantizing model")
-        replace_embeddings_in_pytorch_model(model)
+        # replace_embeddings_in_pytorch_model(model)
         replace_linears_in_pytorch_model(model)
         
+    elif args.backbone =='owsas':
+        model = optimizedWindowSASRec(usernum,itemnum, args).to(args.device)
+        
+    elif args.backbone=='localsas':
+        model = localSASRec(usernum, itemnum, args).to(args.device) 
+        
+           
     for name, param in model.named_parameters():
         try:
             torch.nn.init.xavier_normal_(param.data)
@@ -177,6 +184,7 @@ if __name__ == '__main__':
         for step in (range(num_batch)) :  # tqdm(range(num_batch), total=num_batch, ncols=70, leave=False, unit='b'):
             u, seq, pos, neg = sampler.next_batch()  # tuples to ndarray
             u, seq, pos, neg = np.array(u), np.array(seq), np.array(pos), np.array(neg)
+            
             t0 = time.time()
             
             # pos_logits, neg_logits,mem = model(u, seq, pos, neg)
