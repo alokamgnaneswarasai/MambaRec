@@ -153,6 +153,8 @@ if __name__ == '__main__':
     elif args.backbone=='localsas':
         model = localSASRec(usernum, itemnum, args).to(args.device) 
         
+    elif args.backbone == 'localmamba':
+        model = localmamba(usernum,itemnum,args).to(args.device)
            
     for name, param in model.named_parameters():
         try:

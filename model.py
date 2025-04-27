@@ -2171,5 +2171,88 @@ class localSASRec(torch.nn.Module):
         return logits
     
     
+    
+class localmamba(torch.nn.Module):
+    def __init__(self, user_num, item_num, args, window_size=16):
+        super(localmamba, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.window_size = window_size
+ 
+        # Embedding layers
+        self.item_emb = torch.nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
+        # Mamba layers
+        
+        self.mamba1 = Mamba(d_model=args.hidden_units, d_state=32, d_conv=4, expand=2).to(self.dev) 
+        
+        # Attention and feedforward layers
+        self.attention_layernorms = torch.nn.ModuleList()
+        self.attention_layers = torch.nn.ModuleList()
+        self.forward_layernorms = torch.nn.ModuleList()
+        self.forward_layers = torch.nn.ModuleList()
+        self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
+
+        for _ in range(args.num_blocks):
+            new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.attention_layernorms.append(new_attn_layernorm)
+
+            new_attn_layer = LocalAttention(window_size=self.window_size,causal=True).to(self.dev)
+            self.attention_layers.append(new_attn_layer)
+
+            new_fwd_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.forward_layernorms.append(new_fwd_layernorm)
+
+            new_fwd_layer = PointWiseFeedForward(args.hidden_units, args.dropout_rate).to(self.dev)
+            self.forward_layers.append(new_fwd_layer)
             
-           
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = torch.arange(log_seqs.shape[1], device=self.dev).unsqueeze(0).expand(log_seqs.shape[0], -1)
+        seqs += self.pos_emb(positions)
+        seqs = self.emb_dropout(seqs)
+        
+        seqs = self.mamba1(seqs) 
+        timeline_mask = torch.BoolTensor(log_seqs == 0).to(self.dev)
+        seqs = seqs * ~timeline_mask.unsqueeze(-1)
+        
+        tl = seqs.shape[1]
+
+        for i in range(len(self.attention_layers)):
+            Q = self.attention_layernorms[i](seqs)
+            
+            mha_outputs = self.attention_layers[i](Q, seqs, seqs)
+            seqs = Q + mha_outputs
+            seqs = self.forward_layernorms[i](seqs)
+            seqs = self.forward_layers[i](seqs)
+            seqs = seqs * ~timeline_mask.unsqueeze(-1)
+            
+        # log_feats = self.mamba1(seqs)
+        
+        log_feats = self.last_layernorm(seqs)
+        
+        return log_feats
+    
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):  # For training
+        log_feats = self.log2feats(log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+    
+    def predict(self, user_ids, log_seqs, item_indices):  # For inference
+        log_feats = self.log2feats(log_seqs)
+
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits
+    
