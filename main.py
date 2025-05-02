@@ -155,7 +155,12 @@ if __name__ == '__main__':
         
     elif args.backbone == 'localmamba':
         model = localmamba(usernum,itemnum,args).to(args.device)
-           
+    
+    elif args.backbone == 'qlocalmamba':
+        model = localmamba(usernum,itemnum,args).to(args.device)
+        print("Quantizing model")
+        print("Replacing linears")
+        replace_linears_in_pytorch_model(model)       
     for name, param in model.named_parameters():
         try:
             torch.nn.init.xavier_normal_(param.data)

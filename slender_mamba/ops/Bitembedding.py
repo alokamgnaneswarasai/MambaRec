@@ -533,8 +533,12 @@ class LayerNormLinearQuantFn(torch.autograd.Function):
             x_dtype=ctx.x_dtype,
             recompute_output=True
         )
-        dlinear_weight = torch.einsum("bo,bi->oi", dout, y).to('cpu')
-        dnorm_weight = dnorm_weight.to('cpu')
+        # dlinear_weight = torch.einsum("bo,bi->oi", dout, y).to('cpu')
+        # dnorm_weight = dnorm_weight.to('cpu')
+        
+        # Modified by me "Gnaneswara Sai"
+        dlinear_weight = torch.einsum("bo,bi->oi", dout, y)
+        dnorm_weight = dnorm_weight
         
         if dlinear_bias is not None:
             dlinear_bias = dlinear_bias.to('cpu')

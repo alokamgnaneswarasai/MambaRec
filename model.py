@@ -2173,9 +2173,9 @@ class localSASRec(torch.nn.Module):
     
     
 class localmamba(torch.nn.Module):
-    def __init__(self, user_num, item_num, args, window_size=16):
+    def __init__(self, user_num, item_num, args, window_size=128):
         super(localmamba, self).__init__()
-
+        print(f"Window size for local attention is : {window_size}")
         self.user_num = user_num
         self.item_num = item_num
         self.dev = args.device
@@ -2194,9 +2194,9 @@ class localmamba(torch.nn.Module):
         self.attention_layers = torch.nn.ModuleList()
         self.forward_layernorms = torch.nn.ModuleList()
         self.forward_layers = torch.nn.ModuleList()
-        self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
+        self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
 
-        for _ in range(args.num_blocks):
+        for _ in range(1):
             new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
             self.attention_layernorms.append(new_attn_layernorm)
 
@@ -2211,11 +2211,15 @@ class localmamba(torch.nn.Module):
             
     def log2feats(self, log_seqs):
         seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs = seqs.clone()  # Clone the output to avoid in-place modification issues
         seqs *= self.item_emb.embedding_dim ** 0.5
         positions = torch.arange(log_seqs.shape[1], device=self.dev).unsqueeze(0).expand(log_seqs.shape[0], -1)
         seqs += self.pos_emb(positions)
         seqs = self.emb_dropout(seqs)
-        
+        self.mamba1.in_proj = self.mamba1.in_proj.to(seqs.device)
+        self.mamba1.x_proj = self.mamba1.x_proj.to(seqs.device)
+        self.mamba1.dt_proj = self.mamba1.dt_proj.to(seqs.device)   
+        self.mamba1.out_proj = self.mamba1.out_proj.to(seqs.device)
         seqs = self.mamba1(seqs) 
         timeline_mask = torch.BoolTensor(log_seqs == 0).to(self.dev)
         seqs = seqs * ~timeline_mask.unsqueeze(-1)
@@ -2224,7 +2228,7 @@ class localmamba(torch.nn.Module):
 
         for i in range(len(self.attention_layers)):
             Q = self.attention_layernorms[i](seqs)
-            
+            self.attention_layers[i].to(self.dev)
             mha_outputs = self.attention_layers[i](Q, seqs, seqs)
             seqs = Q + mha_outputs
             seqs = self.forward_layernorms[i](seqs)
@@ -2232,7 +2236,7 @@ class localmamba(torch.nn.Module):
             seqs = seqs * ~timeline_mask.unsqueeze(-1)
             
         # log_feats = self.mamba1(seqs)
-        
+        seqs = seqs.to(self.dev)
         log_feats = self.last_layernorm(seqs)
         
         return log_feats
