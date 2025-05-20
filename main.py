@@ -160,7 +160,18 @@ if __name__ == '__main__':
         model = localmamba(usernum,itemnum,args).to(args.device)
         print("Quantizing model")
         print("Replacing linears")
-        replace_linears_in_pytorch_model(model)       
+        replace_linears_in_pytorch_model(model)
+        
+    elif args.backbone == 'localmamba2':
+        model = localmamba2(usernum,itemnum,args).to(args.device)
+        
+    elif args.backbone =='stackedmamba':
+        model = StackedMambaLocalAttention(usernum,itemnum,args).to(args.device)
+               
+    elif args.backbone =="mamba4rec+local":
+        model = mamba4rec(usernum,itemnum,args).to(args.device)
+        
+                   
     for name, param in model.named_parameters():
         try:
             torch.nn.init.xavier_normal_(param.data)
