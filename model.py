@@ -2259,6 +2259,7 @@ class localmamba(torch.nn.Module):
         item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
         return logits
+
     
 class localmamba2(torch.nn.Module):
     def __init__(self, user_num, item_num, args, window_size=16):
@@ -2553,3 +2554,596 @@ class mamba4rec(torch.nn.Module):
         item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
         logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
         return logits    
+    
+    
+import random
+class noiselocalmamba(torch.nn.Module):
+    def __init__(self, user_num, item_num, args, window_size=128):
+        super(noiselocalmamba, self).__init__()
+        print(f"Window size for local attention is : {window_size}")
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.window_size = window_size
+
+        # Embedding layers
+        self.item_emb = torch.nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
+
+        # Mamba layers
+        self.mamba1 = Mamba(d_model=args.hidden_units, d_state=32, d_conv=4, expand=2).to(self.dev)
+
+        # Attention and feedforward layers
+        self.attention_layernorms = torch.nn.ModuleList()
+        self.attention_layers = torch.nn.ModuleList()
+        self.forward_layernorms = torch.nn.ModuleList()
+        self.forward_layers = torch.nn.ModuleList()
+        self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+
+        for _ in range(1):
+            new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.attention_layernorms.append(new_attn_layernorm)
+
+            new_attn_layer = LocalAttention(window_size=self.window_size, causal=True).to(self.dev)
+            self.attention_layers.append(new_attn_layer)
+
+            new_fwd_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.forward_layernorms.append(new_fwd_layernorm)
+
+            new_fwd_layer = PointWiseFeedForward(args.hidden_units, args.dropout_rate).to(self.dev)
+            self.forward_layers.append(new_fwd_layer)
+
+    def add_noise(self, log_seqs, max_len):
+        """
+        Introduce noise by randomly replacing 10% of items in the sequence
+        with other valid item IDs in the range [1, max_len].
+        """
+        noisy_seqs = torch.tensor(log_seqs, dtype=torch.long).clone()  # Clone to avoid modifying original sequences
+        batch_size, seq_len = noisy_seqs.shape
+        num_noisy_items = int(seq_len * 0.1)  # 10% of the sequence length
+
+        for i in range(batch_size):
+            noisy_indices = random.sample(range(seq_len), num_noisy_items)
+            for idx in noisy_indices:
+                noisy_seqs[i, idx] = random.randint(1, max_len)  # Replace with a random valid item ID
+
+        return noisy_seqs
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs = seqs.clone()  # Clone the output to avoid in-place modification issues
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = torch.arange(log_seqs.shape[1], device=self.dev).unsqueeze(0).expand(log_seqs.shape[0], -1)
+        seqs += self.pos_emb(positions)
+        seqs = self.emb_dropout(seqs)
+        self.mamba1.in_proj = self.mamba1.in_proj.to(seqs.device)
+        self.mamba1.x_proj = self.mamba1.x_proj.to(seqs.device)
+        self.mamba1.dt_proj = self.mamba1.dt_proj.to(seqs.device)
+        self.mamba1.out_proj = self.mamba1.out_proj.to(seqs.device)
+        seqs = self.mamba1(seqs)
+        timeline_mask = torch.BoolTensor(log_seqs == 0).to(self.dev)
+        seqs = seqs * ~timeline_mask.unsqueeze(-1)
+
+        tl = seqs.shape[1]
+
+        for i in range(len(self.attention_layers)):
+            Q = self.attention_layernorms[i](seqs)
+            self.attention_layers[i].to(self.dev)
+            mha_outputs = self.attention_layers[i](Q, seqs, seqs)
+            seqs = Q + mha_outputs
+            seqs = self.forward_layernorms[i](seqs)
+            seqs = self.forward_layers[i](seqs)
+            seqs = seqs * ~timeline_mask.unsqueeze(-1)
+
+        seqs = seqs.to(self.dev)
+        log_feats = self.last_layernorm(seqs)
+
+        return log_feats
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):  # For training
+        # Add noise to the input sequences
+        noisy_log_seqs = self.add_noise(log_seqs, max_len=self.item_num)
+
+        log_feats = self.log2feats(noisy_log_seqs)
+
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):  # For inference
+        log_feats = self.log2feats(log_seqs)
+
+        final_feat = log_feats[:, -1, :]
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits
+    
+    
+class usernoiselocalmamba(torch.nn.Module):
+    def __init__(self, user_num, item_num, args, window_size=128):
+        super(usernoiselocalmamba, self).__init__()
+        print(f"Window size for local attention is : {window_size}")
+        print(f"User num: {user_num}, Item num: {item_num}")
+        
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.window_size = window_size
+
+        # Embedding layers
+        self.user_emb = torch.nn.Embedding(self.user_num + 1, args.hidden_units, padding_idx=0)  # Explicit user embedding
+        self.item_emb = torch.nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
+
+        # Mamba layers
+        self.mamba1 = Mamba(d_model=args.hidden_units, d_state=32, d_conv=4, expand=2).to(self.dev)
+
+        # Attention and feedforward layers
+        self.attention_layernorms = torch.nn.ModuleList()
+        self.attention_layers = torch.nn.ModuleList()
+        self.forward_layernorms = torch.nn.ModuleList()
+        self.forward_layers = torch.nn.ModuleList()
+        self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+
+        for _ in range(1):
+            new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.attention_layernorms.append(new_attn_layernorm)
+
+            new_attn_layer = LocalAttention(window_size=self.window_size, causal=True).to(self.dev)
+            self.attention_layers.append(new_attn_layer)
+
+            new_fwd_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.forward_layernorms.append(new_fwd_layernorm)
+
+            new_fwd_layer = PointWiseFeedForward(args.hidden_units, args.dropout_rate).to(self.dev)
+            self.forward_layers.append(new_fwd_layer)
+
+    def add_noise(self, log_seqs, max_len):
+        """
+        Introduce noise by randomly replacing 10% of items in the sequence
+        with other valid item IDs in the range [1, max_len].
+        """
+        noisy_seqs = torch.tensor(log_seqs, dtype=torch.long).clone()  # Clone to avoid modifying original sequences
+        batch_size, seq_len = noisy_seqs.shape
+        num_noisy_items = int(seq_len * 0.1)  # 10% of the sequence length
+
+        for i in range(batch_size):
+            noisy_indices = random.sample(range(seq_len), num_noisy_items)
+            for idx in noisy_indices:
+                noisy_seqs[i, idx] = random.randint(1, max_len)  # Replace with a random valid item ID
+
+        return noisy_seqs
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs = seqs.clone()  # Clone the output to avoid in-place modification issues
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = torch.arange(log_seqs.shape[1], device=self.dev).unsqueeze(0).expand(log_seqs.shape[0], -1)
+        seqs += self.pos_emb(positions)
+        seqs = self.emb_dropout(seqs)
+        self.mamba1.in_proj = self.mamba1.in_proj.to(seqs.device)
+        self.mamba1.x_proj = self.mamba1.x_proj.to(seqs.device)
+        self.mamba1.dt_proj = self.mamba1.dt_proj.to(seqs.device)
+        self.mamba1.out_proj = self.mamba1.out_proj.to(seqs.device)
+        seqs = self.mamba1(seqs)
+        timeline_mask = torch.BoolTensor(log_seqs == 0).to(self.dev)
+        seqs = seqs * ~timeline_mask.unsqueeze(-1)
+
+        tl = seqs.shape[1]
+
+        for i in range(len(self.attention_layers)):
+            Q = self.attention_layernorms[i](seqs)
+            self.attention_layers[i].to(self.dev)
+            mha_outputs = self.attention_layers[i](Q, seqs, seqs)
+            seqs = Q + mha_outputs
+            seqs = self.forward_layernorms[i](seqs)
+            seqs = self.forward_layers[i](seqs)
+            seqs = seqs * ~timeline_mask.unsqueeze(-1)
+
+        seqs = seqs.to(self.dev)
+        log_feats = self.last_layernorm(seqs)
+
+        return log_feats
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):  # For training
+        # Add noise to the input sequences
+        noisy_log_seqs = self.add_noise(log_seqs, max_len=self.item_num)
+
+        # Get user embeddings
+        user_embs = self.user_emb(torch.LongTensor(user_ids).to(self.dev))
+
+        # Process log sequences
+        log_feats = self.log2feats(noisy_log_seqs)
+
+        # Combine explicit user embeddings with log features
+        combined_feats = log_feats + user_embs.unsqueeze(1)  # Broadcasting user embeddings across sequence length
+
+        # Get positive and negative item embeddings
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        # Compute logits
+        pos_logits = (combined_feats * pos_embs).sum(dim=-1)
+        neg_logits = (combined_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):  # For inference
+        # Get user embeddings
+        user_embs = self.user_emb(torch.LongTensor(user_ids).to(self.dev))
+
+        # Process log sequences
+        log_feats = self.log2feats(log_seqs)
+
+        # Combine explicit user embeddings with log features
+        final_feat = log_feats[:, -1, :] + user_embs  # Combine user embedding with the last log feature
+
+        # Get item embeddings
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        # Compute logits
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits
+    
+    
+import torch
+import torch.nn as nn
+import random
+import numpy as np
+
+class DynamicWindowAttention(nn.Module):
+    def __init__(self, hidden_units, window_size, device):
+        super(DynamicWindowAttention, self).__init__()
+        self.hidden_units = hidden_units
+        self.window_size = window_size
+        self.device = device
+
+        # Trainable parameters for soft masking
+        self.WQ_L = nn.Linear(hidden_units, hidden_units, bias=False)
+        self.WK_L = nn.Linear(hidden_units, hidden_units, bias=False)
+        self.WQ_R = nn.Linear(hidden_units, hidden_units, bias=False)
+        self.WK_R = nn.Linear(hidden_units, hidden_units, bias=False)
+
+    def compute_soft_mask(self, Q, K):
+        """
+        Compute the soft mask matrix M for dynamic window attention.
+        """
+        # Compute left and right boundary confidence vectors
+        φ_lq = torch.softmax(self.WQ_L(Q) @ self.WK_L(K).transpose(-1, -2) / np.sqrt(self.hidden_units), dim=-1)
+        φ_rq = torch.softmax(self.WQ_R(Q) @ self.WK_R(K).transpose(-1, -2) / np.sqrt(self.hidden_units), dim=-1)
+
+        # Compute cumulative sums for left and right boundaries
+        Ln = torch.triu(torch.ones(K.size(1), K.size(1), device=self.device))  # Upper triangular matrix
+        flq = φ_lq @ Ln
+        grq = φ_rq @ Ln.T
+
+        # Compute the soft mask matrix
+        M = flq * grq + grq * flq  # Ensure non-zero mask regardless of boundary order
+        return M
+
+    def forward(self, Q, K, V):
+        """
+        Perform dynamic window attention using the computed soft mask.
+        """
+        # Compute attention scores
+        scores = Q @ K.transpose(-1, -2) / np.sqrt(self.hidden_units)
+
+        # Compute the soft mask matrix
+        M = self.compute_soft_mask(Q, K)
+
+        # Apply the mask to the attention scores
+        masked_scores = scores * M
+
+        # Compute attention weights and output
+        attention_weights = torch.softmax(masked_scores, dim=-1)
+        output = attention_weights @ V
+        return output
+
+
+class dynamicusernoiselocalmamba(nn.Module):
+    def __init__(self, user_num, item_num, args, window_size=128):
+        super(dynamicusernoiselocalmamba, self).__init__()
+        print(f"Window size for dynamic attention is : {window_size}")
+        print(f"User num: {user_num}, Item num: {item_num}")
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.window_size = window_size
+
+        # Embedding layers
+        self.user_emb = nn.Embedding(self.user_num + 1, args.hidden_units, padding_idx=0)  # Explicit user embedding
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+
+        # Mamba layer
+        self.mamba1 = Mamba(d_model=args.hidden_units, d_state=32, d_conv=4, expand=2).to(self.dev)
+
+        # Dynamic Window Attention layers
+        self.dynamic_attention_layernorms = nn.ModuleList()
+        self.dynamic_attention_layers = nn.ModuleList()
+        self.forward_layernorms = nn.ModuleList()
+        self.forward_layers = nn.ModuleList()
+        self.last_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+
+        for _ in range(1):  # Number of attention layers
+            new_attn_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.dynamic_attention_layernorms.append(new_attn_layernorm)
+
+            new_attn_layer = DynamicWindowAttention(args.hidden_units, window_size, self.dev).to(self.dev)
+            self.dynamic_attention_layers.append(new_attn_layer)
+
+            new_fwd_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.forward_layernorms.append(new_fwd_layernorm)
+
+            new_fwd_layer = PointWiseFeedForward(args.hidden_units, args.dropout_rate).to(self.dev)
+            self.forward_layers.append(new_fwd_layer)
+
+    def add_noise(self, log_seqs, max_len):
+        """
+        Introduce noise by randomly replacing 10% of items in the sequence
+        with other valid item IDs in the range [1, max_len].
+        """
+        noisy_seqs = torch.tensor(log_seqs, dtype=torch.long).clone()  # Clone to avoid modifying original sequences
+        batch_size, seq_len = noisy_seqs.shape
+        num_noisy_items = int(seq_len * 0.1)  # 10% of the sequence length
+
+        for i in range(batch_size):
+            noisy_indices = random.sample(range(seq_len), num_noisy_items)
+            for idx in noisy_indices:
+                noisy_seqs[i, idx] = random.randint(1, max_len)  # Replace with a random valid item ID
+
+        return noisy_seqs
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs = seqs.clone()  # Clone the output to avoid in-place modification issues
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = torch.arange(log_seqs.shape[1], device=self.dev).unsqueeze(0).expand(log_seqs.shape[0], -1)
+        seqs += self.pos_emb(positions)
+        seqs = self.emb_dropout(seqs)
+        self.mamba1.in_proj = self.mamba1.in_proj.to(seqs.device)
+        self.mamba1.x_proj = self.mamba1.x_proj.to(seqs.device)
+        self.mamba1.dt_proj = self.mamba1.dt_proj.to(seqs.device)
+        self.mamba1.out_proj = self.mamba1.out_proj.to(seqs.device)
+        seqs = self.mamba1(seqs)
+        timeline_mask = torch.BoolTensor(log_seqs == 0).to(self.dev)
+        seqs = seqs * ~timeline_mask.unsqueeze(-1)
+
+        for i in range(len(self.dynamic_attention_layers)):
+            Q = self.dynamic_attention_layernorms[i](seqs)
+            K = seqs
+            V = seqs
+            mha_outputs = self.dynamic_attention_layers[i](Q, K, V)
+            seqs = Q + mha_outputs
+            seqs = self.forward_layernorms[i](seqs)
+            seqs = self.forward_layers[i](seqs)
+            seqs = seqs * ~timeline_mask.unsqueeze(-1)
+
+        seqs = seqs.to(self.dev)
+        log_feats = self.last_layernorm(seqs)
+
+        return log_feats
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):  # For training
+        # Add noise to the input sequences
+        noisy_log_seqs = self.add_noise(log_seqs, max_len=self.item_num)
+
+        # Get user embeddings
+        user_embs = self.user_emb(torch.LongTensor(user_ids).to(self.dev))
+
+        # Process log sequences
+        log_feats = self.log2feats(noisy_log_seqs)
+
+        # Combine explicit user embeddings with log features
+        combined_feats = log_feats + user_embs.unsqueeze(1)  # Broadcasting user embeddings across sequence length
+
+        # Get positive and negative item embeddings
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        # Compute logits
+        pos_logits = (combined_feats * pos_embs).sum(dim=-1)
+        neg_logits = (combined_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):  # For inference
+        # Get user embeddings
+        user_embs = self.user_emb(torch.LongTensor(user_ids).to(self.dev))
+
+        # Process log sequences
+        log_feats = self.log2feats(log_seqs)
+
+        # Combine explicit user embeddings with log features
+        final_feat = log_feats[:, -1, :] + user_embs  # Combine user embedding with the last log feature
+
+        # Get item embeddings
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        # Compute logits
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits
+    
+    
+    
+    
+    
+import torch
+import torch.nn as nn
+import numpy as np
+
+
+class QuerySpecificWindowAttention(nn.Module):
+    def __init__(self, hidden_units, max_seq_length, device):
+        super(QuerySpecificWindowAttention, self).__init__()
+        self.hidden_units = hidden_units
+        self.max_seq_length = max_seq_length
+        self.device = device
+
+        # Parameters for central position prediction
+        self.Wp = nn.Linear(hidden_units, hidden_units, bias=False)
+        self.Up = nn.Linear(hidden_units, 1, bias=False)
+
+        # Parameters for window size prediction
+        self.Wd = nn.Linear(hidden_units, hidden_units, bias=False)
+        self.Ud = nn.Linear(hidden_units, 1, bias=False)
+
+    def compute_gaussian_bias(self, Q):
+        """
+        Compute the Gaussian bias for query-specific window attention.
+        """
+        # Central position prediction
+        p = self.Up(torch.tanh(self.Wp(Q)))  # Shape: (batch_size, seq_len, 1)
+        P = self.max_seq_length * torch.sigmoid(p)  # Scale to [0, max_seq_length]
+
+        # Window size prediction
+        z = self.Ud(torch.tanh(self.Wd(Q)))  # Shape: (batch_size, seq_len, 1)
+        D = self.max_seq_length * torch.sigmoid(z)  # Scale to [0, max_seq_length]
+
+        # Compute Gaussian bias
+        i = torch.arange(self.max_seq_length, device=self.device).view(1, 1, -1)  # Shape: (1, 1, max_seq_length)
+        G = -((i - P) ** 2) / (2 * (D / 2) ** 2)  # Gaussian bias, Shape: (batch_size, seq_len, max_seq_length)
+
+        return G
+
+    def forward(self, Q, K, V):
+        """
+        Perform query-specific window attention.
+        """
+        # Compute attention scores
+        scores = Q @ K.transpose(-1, -2) / np.sqrt(self.hidden_units)  # Shape: (batch_size, seq_len, seq_len)
+
+        # Compute Gaussian bias
+        G = self.compute_gaussian_bias(Q)  # Shape: (batch_size, seq_len, seq_len)
+
+        # Apply Gaussian bias to attention scores
+        scores = scores + G
+
+        # Compute attention weights and output
+        attention_weights = torch.softmax(scores, dim=-1)  # Shape: (batch_size, seq_len, seq_len)
+        output = attention_weights @ V  # Shape: (batch_size, seq_len, hidden_units)
+
+        return output
+
+
+class queryusernoiselocalmamba(nn.Module):
+    def __init__(self, user_num, item_num, args):
+        super(queryusernoiselocalmamba, self).__init__()
+        print(f"User num: {user_num}, Item num: {item_num}")
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+        self.max_seq_length = args.maxlen
+
+        # Embedding layers
+        self.user_emb = nn.Embedding(self.user_num + 1, args.hidden_units, padding_idx=0)  # Explicit user embedding
+        self.item_emb = nn.Embedding(self.item_num + 1, args.hidden_units, padding_idx=0)
+        self.pos_emb = nn.Embedding(args.maxlen, args.hidden_units)
+        self.emb_dropout = nn.Dropout(p=args.dropout_rate)
+
+        # Query-Specific Window Attention layers
+        self.query_attention_layernorms = nn.ModuleList()
+        self.query_attention_layers = nn.ModuleList()
+        self.forward_layernorms = nn.ModuleList()
+        self.forward_layers = nn.ModuleList()
+        self.last_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+
+        for _ in range(2):  # Number of attention layers
+            new_attn_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.query_attention_layernorms.append(new_attn_layernorm)
+
+            new_attn_layer = QuerySpecificWindowAttention(args.hidden_units, args.maxlen, self.dev).to(self.dev)
+            self.query_attention_layers.append(new_attn_layer)
+
+            new_fwd_layernorm = nn.LayerNorm(args.hidden_units, eps=1e-8).to(self.dev)
+            self.forward_layernorms.append(new_fwd_layernorm)
+
+            new_fwd_layer = PointWiseFeedForward(args.hidden_units, args.dropout_rate).to(self.dev)
+            self.forward_layers.append(new_fwd_layer)
+
+    def add_noise(self, log_seqs, max_len):
+        """
+        Introduce noise by randomly replacing 10% of items in the sequence
+        with other valid item IDs in the range [1, max_len].
+        """
+        noisy_seqs = torch.tensor(log_seqs, dtype=torch.long).clone()  # Clone to avoid modifying original sequences
+        batch_size, seq_len = noisy_seqs.shape
+        num_noisy_items = int(seq_len * 0.1)  # 10% of the sequence length
+
+        for i in range(batch_size):
+            noisy_indices = random.sample(range(seq_len), num_noisy_items)
+            for idx in noisy_indices:
+                noisy_seqs[i, idx] = random.randint(1, max_len)  # Replace with a random valid item ID
+
+        return noisy_seqs
+
+    def log2feats(self, log_seqs):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs = seqs.clone()  # Clone the output to avoid in-place modification issues
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        positions = torch.arange(log_seqs.shape[1], device=self.dev).unsqueeze(0).expand(log_seqs.shape[0], -1)
+        seqs += self.pos_emb(positions)
+        seqs = self.emb_dropout(seqs)
+
+        for i in range(len(self.query_attention_layers)):
+            Q = self.query_attention_layernorms[i](seqs)
+            K = seqs
+            V = seqs
+            mha_outputs = self.query_attention_layers[i](Q, K, V)
+            seqs = Q + mha_outputs
+            seqs = self.forward_layernorms[i](seqs)
+            seqs = self.forward_layers[i](seqs)
+
+        seqs = seqs.to(self.dev)
+        log_feats = self.last_layernorm(seqs)
+
+        return log_feats
+
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):  # For training
+        # Add noise to the input sequences
+        noisy_log_seqs = self.add_noise(log_seqs, max_len=self.item_num)
+
+        # Get user embeddings
+        user_embs = self.user_emb(torch.LongTensor(user_ids).to(self.dev))
+
+        # Process log sequences
+        log_feats = self.log2feats(noisy_log_seqs)
+
+        # Combine explicit user embeddings with log features
+        combined_feats = log_feats + user_embs.unsqueeze(1)  # Broadcasting user embeddings across sequence length
+
+        # Get positive and negative item embeddings
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        # Compute logits
+        pos_logits = (combined_feats * pos_embs).sum(dim=-1)
+        neg_logits = (combined_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+
+    def predict(self, user_ids, log_seqs, item_indices):  # For inference
+        # Get user embeddings
+        user_embs = self.user_emb(torch.LongTensor(user_ids).to(self.dev))
+
+        # Process log sequences
+        log_feats = self.log2feats(log_seqs)
+
+        # Combine explicit user embeddings with log features
+        final_feat = log_feats[:, -1, :] + user_embs  # Combine user embedding with the last log feature
+
+        # Get item embeddings
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+
+        # Compute logits
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits

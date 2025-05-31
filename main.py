@@ -171,6 +171,18 @@ if __name__ == '__main__':
     elif args.backbone =="mamba4rec+local":
         model = mamba4rec(usernum,itemnum,args).to(args.device)
         
+    elif args.backbone == 'noiselocalmamba':
+        model = noiselocalmamba(usernum,itemnum,args).to(args.device)
+        
+    elif args.backbone == 'usernoiselocalmamba':
+        model = usernoiselocalmamba(usernum,itemnum,args).to(args.device)
+        
+    elif args.backbone == 'dynamicusernoiselocalmamba':
+        model = dynamicusernoiselocalmamba(usernum,itemnum,args).to(args.device)
+        
+    elif args.backbone == 'queryusernoiselocalmamba':
+        model = queryusernoiselocalmamba(usernum,itemnum,args).to(args.device)
+        
                    
     for name, param in model.named_parameters():
         try:
